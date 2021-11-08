@@ -1,13 +1,21 @@
-#DEFINE REACHING_RANGE 48
-
 #ENABLE LOCALCLIENTCODE
 #BEGIN CLIENTCODE
 #BEGIN JAVASCRIPT
 (function() {
+	let ticks = 0
+	let ticksBeforeAbort = 1500; // (1500 * 4) // 6 seconds.
 	let engineWaitId = setInterval(function() {
-		if (VS.Client && VS.World.global && PIXI.filters) {
+		if (VS.Client && VS.World.global && VS.Client.aInterfaceUtils && PIXI.filters) {
 			clearInterval(engineWaitId);
 			buildClientInventory();
+		} else {
+			ticks++;
+			if (ticks >= ticksBeforeAbort) {
+				clearInterval(engineWaitId);
+				if (VS.Client) {
+					VS.Client.aMes('This library is dependent on the aInterfaceUtils library. This library has not been found.');
+				}
+			}
 		}
 	});
 
@@ -37,7 +45,7 @@
 			}
 		}
 
-		// assign the custom onConnect function to the client
+		// assign the custom onConnect function to the client, this is called before `onConnect` is called so it can be assigned this way
 		VS.Type.setFunction('Client', 'onConnect', onConnect);
 
 		// create a outline filter that will be used to outline diobs that can be picked up
@@ -296,14 +304,14 @@
 			var x;
 			var y;
 			if (this.infoMenu.preventAutoScale) {
-				mousePos.x *= (VS.Client.___EVITCA_aInterfaceUtils ? VS.Client._screenScale.x : VS.Client.getScreenScale().x);
-				mousePos.y *= (VS.Client.___EVITCA_aInterfaceUtils ? VS.Client._screenScale.y : VS.Client.getScreenScale().y);
+				mousePos.x *= VS.Client._screenScale.x;
+				mousePos.y *= VS.Client._screenScale.y;
 			}
 
 			x = mousePos.x;
 			y = mousePos.y - VS.World.global.aInventory.infoMenu.height;
 
-			if (x + VS.World.global.aInventory.infoMenu.width > (VS.Client.___EVITCA_aInterfaceUtils ? VS.Client._windowSize.width : VS.World.getWindowSize().width)) {
+			if (x + VS.World.global.aInventory.infoMenu.width > VS.Client._windowSize.width) {
 				x = mousePos.x - VS.World.global.aInventory.infoMenu.width;
 			}
 
@@ -353,10 +361,6 @@ Interface
 				'equipped': false
 			}
 
-// left-click: equip
-// right-click: examine
-// drag and drop to drop the item(or put it into the crafting menu etc) 
-
 			onMouseMove(pClient, pX, pY)
 				if (!aInventory.grabbing && !aInventory.heldSlot)
 					if (!aInventory.infoMenu.isHidden)
@@ -389,46 +393,10 @@ Interface
 Mob/Player
 	var c_inventory = {}
 
-	function toggleInventoryMenu()
-		if (this.client.checkInterfaceShown('aInventory_interface')) 
-			this.client.hideInterface('aInventory_interface')
-			return
-
-		this.client.showInterface('aInventory_interface')
-
 Diob
 	GroundItem
 		var description = ''
 		var displayName = ''
-
-		onMouseEnter(pClient, pX, pY)
-			if (!aInventory.grabbing && !aInventory.heldSlot)
-				if (Map.getDist(pClient.mob, this) <= REACHING_RANGE)
-					pClient.setMouseCursor('grab')
-					this.addFilter('outline', 'custom', { 'filter': aInventory.outlineFilter })
-
-		onMouseDown(pClient, pX, pY, pButton)
-			if (pButton === 1)
-				if (Map.getDist(pClient.mob, this) <= REACHING_RANGE)
-					pClient.setMouseCursor('grabbing')
-
-		onMouseUp(pClient, pX, pY, pButton)
-			if (pButton === 1)
-				pClient.setMouseCursor('')
-				this.removeFilter('outline')
-				if (pClient.___EVITCA_aInterfaceUtils)
-					if (this.isMousedDown() && Map.getDist(pClient.mob, this) <= REACHING_RANGE)
-						pClient.mob.pickupAction(this.id)
-						pClient.setMouseCursor('')
-				else
-					if (Map.getDist(pClient.mob, this) <= REACHING_RANGE)
-						pClient.mob.pickupAction(this.id)
-						pClient.setMouseCursor('')		
-
-		onMouseExit(pClient, pX, pY)
-			if (!aInventory.grabbing && !aInventory.heldSlot)
-				pClient.setMouseCursor('')
-			this.removeFilter('outline')
 
 #END CLIENTCODE
 
