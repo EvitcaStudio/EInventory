@@ -159,7 +159,6 @@
 		// 		/* dropping on background */
 
 		aInventory.c_addItemToSlot = function(pItemID, pSlot, pID, pRequiresPrompt=false, pCategory='', pStackable=false, pQuantity=1, pEquippable=false, pCraftsman='') {
-			console.log('CLIENT: ', 'pItemID: ' + pItemID, 'pSlot: ' + pSlot, 'pID: ' + pID, 'pRequiresPrompt: ' + pRequiresPrompt, 'pCategory: ' + pCategory, 'pStackable: ' + pStackable, 'pQuantity: ' + pQuantity, 'pEquippable: ' + pEquippable, 'pCraftsman: ' + pCraftsman)
 			var item = VS.World.getDiobByID(pItemID);
 			var slotElement = VS.Client.getInterfaceElement('aInventory_interface', 'slot'+pSlot);
 			var newItem = false;
