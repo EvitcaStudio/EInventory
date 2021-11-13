@@ -2,21 +2,23 @@
 #BEGIN CLIENTCODE
 #BEGIN JAVASCRIPT
 (function() {
-	let ticks = 0
-	let ticksBeforeAbort = 1500; // (1500 * 4) // 6 seconds.
+/* 	let ticks = 0
+	let ticksBeforeAbort = 3000; // (1500 * 4) // 12 seconds. */
 	let engineWaitId = setInterval(function() {
 		if (VS.Client && VS.World.global && VS.Client.aInterfaceUtils && PIXI.filters) {
 			clearInterval(engineWaitId);
 			buildClientInventory();
-		} else {
+		}/*  else {
 			ticks++;
 			if (ticks >= ticksBeforeAbort) {
 				clearInterval(engineWaitId);
 				if (VS.Client) {
 					VS.Client.aMes('This library is dependent on the aInterfaceUtils library. This library has not been found.');
+				} else {
+					console.log('This library is dependent on the aInterfaceUtils library. This library has not been found.')
 				}
 			}
-		}
+		} */
 	});
 
 	let buildClientInventory = function() {
@@ -32,6 +34,7 @@
 		VS.World.global.aInventory = aInventory;
 		
 		const GUI_TAG = '_gui';
+		const MAX_SLOTS = (VS.World.global.MAX_SLOTS ? VS.World.global.MAX_SLOTS : 20);
 
 		// a reference to the old onConnect, if it exists // if this ever stops working, assign this BEFORE THE CLIENT IS CREATED
 		aInventory._onConnect = VS.Type.getFunction('Client', 'onConnect');
@@ -52,32 +55,38 @@
 		aInventory.outlineDefaultThickness = 3;
 		aInventory.outlineFilter = new PIXI.filters.OutlineFilter(aInventory.outlineDefaultThickness, 0xFF7F50, 0.1);
 
+		// a variable that tracks if the inventory is *busy* and cannot do any other request until it is finished
+		aInventory.busy = false;
+
 		// attach onMouseDown event to client
 		if (!aInventory.onMouseDownSet) {
 			aInventory._onMouseDown = VS.Client.onMouseDown;
 			aInventory.onMouseDownSet = true;
 			VS.Client.onMouseDown = function(pDiob, pX, pY, pButton) {
 				if (pButton === 1) {
-					if (this.mob.c_inGame) {
-						if (pDiob && pDiob.type === 'Interface/Inventory_Interface/Slot') {
-							let slotElement = pDiob;
-							if (slotElement.info.occupied) {
-								let slotElementInfo = {};
-								VS.Util.copyObject(slotElementInfo, slotElement.info);
-								aInventory.heldSlot = { 'slot': slotElement, 'info': slotElementInfo };
-								aInventory.grabbing  = true;
-								aInventory.hideInfoMenu();
-								if (!this.aInventoryMouseCursor) {
-									this.aInventoryMouseCursor = VS.newDiob();
+					if (this.mob.canUseInventory) {
+						if (!aInventory.busy) {
+							if (pDiob && pDiob.type === 'Interface/Inventory_Interface/Slot') {
+								let slotElement = pDiob;
+								if (slotElement.info.occupied) {
+									let slotElementInfo = {};
+									VS.Util.copyObject(slotElementInfo, slotElement.info);
+									aInventory.heldSlot = { 'slot': slotElement, 'info': slotElementInfo, 'ID': slotElementInfo.item.ID };
+									aInventory.isHoldingSlot = true;
+									aInventory.grabbing  = true;
+									aInventory.hideInfoMenu();
+									if (!this.aInventoryMouseCursor) {
+										this.aInventoryMouseCursor = VS.newDiob();
+									}
+									let atlasName = VS.Type.getVariable(slotElement.info.item.type, 'atlasName');
+									let iconName = VS.Type.getVariable(slotElement.info.item.type, 'iconName');
+									let iconState = VS.Type.getVariable(slotElement.info.item.type, 'iconState');
+									this.aInventoryMouseCursor.atlasName = atlasName;
+									this.aInventoryMouseCursor.iconName = iconName;
+									this.aInventoryMouseCursor.iconState = iconState;
+									this.setMouseCursor(this.aInventoryMouseCursor);
+									aInventory.c_cleanSlot(slotElement);
 								}
-								let atlasName = VS.Type.getVariable(slotElement.info.item.type, 'atlasName');
-								let iconName = VS.Type.getVariable(slotElement.info.item.type, 'iconName');
-								let iconState = VS.Type.getVariable(slotElement.info.item.type, 'iconState');
-								this.aInventoryMouseCursor.atlasName = atlasName;
-								this.aInventoryMouseCursor.iconName = iconName;
-								this.aInventoryMouseCursor.iconState = iconState;
-								this.setMouseCursor(this.aInventoryMouseCursor);
-								aInventory.c_cleanSlot(slotElement);
 							}
 						}
 					}
@@ -97,72 +106,46 @@
 					aInventory._onMouseUp.apply(this, arguments);
 				}
 				if (pButton === 1) {
-					if (this.mob.c_inGame) {
-						aInventory.grabbing = false;
-						if (pDiob) {
-							if (aInventory.heldSlot && pDiob.type === 'Interface/Inventory_Interface/Slot') {
-								let slotElement = pDiob;
-								// slotElement has something in it
-								if (slotElement.info.occupied) {
-									aInventory.c_swapSlotItems(aInventory.heldSlot, slotElement);
-								// slotElement is empty
-								} else {
-									aInventory.c_moveSlotItem(aInventory.heldSlot, slotElement)
-								} 						
-							// if you are holding onto a slot and you have moved it over the inventory background, then this is a illegal drop and the item is returned to its slot
-							} else if (aInventory.heldSlot && pDiob.type === 'Interface/Inventory_Interface/Inventory_Background') {
-
-							// if you are holding onto a slot and you have moved it over a interface diob, could be dropping it into another interface for usage?
-							} else if (aInventory.heldSlot && pDiob.baseType === 'Interface') {
-								// call a event function with helpful paramas to figure out what to do with this item, the event function will have a callback parameter embedded into it, if when called will automatically remove this item from the inventory.
-								// maybe this will be able to get a certain quantity of the item that is dropped if requested, and a dialog appears to choose and the callback is passed along?
+					if (this.mob.canUseInventory) {
+						if (!aInventory.busy) {
+							aInventory.grabbing = false;
+							if (pDiob) {
+								if (aInventory.heldSlot && pDiob.mapName && pDiob.baseType !== 'Interface') {
+									// if this diob is a map diob, drop it onto the map
+									aInventory.c_dropItemFromSlot(aInventory.heldSlot);
+								} else if (aInventory.heldSlot && pDiob.type === 'Interface/Inventory_Interface/Slot') {
+									let slotElement = pDiob;
+									if (slotElement.info.occupied) {
+										// slotElement has something in it
+										aInventory.c_swapSlotItems(aInventory.heldSlot, slotElement);
+									} else {
+										// slotElement is empty
+										aInventory.c_moveSlotItem(aInventory.heldSlot, slotElement)
+									}				
+								} else if (aInventory.heldSlot && pDiob.type === 'Interface/Inventory_Interface/Inventory_Background') {
+									// if you are holding onto a slot and you have moved it over the inventory background, then this is a illegal drop and the item is returned to its slot
+									aInventory.c_restoreSlot(aInventory.heldSlot);
+								} else if (aInventory.heldSlot && pDiob.baseType === 'Interface') {
+									// if you are holding onto a slot and you have moved it over a interface diob, could be dropping it into another interface for usage?
+									// call a event function with helpful paramas to figure out what to do with this item, the event function will have a callback parameter embedded into it, if when called will automatically remove this item from the inventory.
+									// maybe this will be able to get a certain quantity of the item that is dropped if requested, and a dialog appears to choose and the callback is passed along?
+									aInventory.c_dropItemFromSlot(aInventory.heldSlot, 'Interface');
+								}
+							} else if (aInventory.heldSlot) {
+								// if you are holding onto a slot and there is no diob at all (it must be a tile since they have no mouseOpacity by default or a map void)
+								aInventory.c_dropItemFromSlot(aInventory.heldSlot);
 							}
-						}
-						return;
-						// if you are holding onto a slot and you have moved it over a map diob or no diob at all (a tile since they have no mouseOpacity by default)
-						if (aInventory.heldSlot && (!pDiob || pDiob.mapName)) {
-							
 						}
 					}
 				}
 			}
 		}
-		// if (!this.isPlayer) return
-		// if (!diob) return
-		// if (button === 1)
-		// 	if (this.slotHolding && Type.isType(diob.type, 'Interface/Inventory/Slot')) // when players "drops" a slot onto another slot
-		// 		if (diob.occupied) // if the slot the player drops a slot onto has something in it
-		// 			this.mob.swapSlots(this.slotHolding, diob) // swap data from this slot to the other and vice versa
-		// 		else /* empty slot */
-		// 			this.slotHolding.occupied = null // remove data from old slot
-		// 			this.slotHolding.atlasName = ''// remove data from old slot
-		// 			this.slotHolding.iconName = ''// remove data from old slot
-		// 			diob.holding = this.slotHolding.holding // give new slot old slots data
-		// 			diob.atlasName = diob.holding.item.atlasName // swap icon info
-		// 			diob.iconName = diob.holding.item.iconName + GUI_TAG // swap icon info
-		// 			diob.occupied = true // this slot has something in it now, signify it with changing the var
-		// 			this.slotHolding = null // reset your holding slot because you already "dropped" it (job done)!
-		// 			this.setMouseCursor()
-
-		// 	else if (this.slotHolding && Type.isType(diob.baseType, 'Tile')) /* Dragging out of inventory and onto the map in a dropping manner */
-		// 		this.mob.drop(this.slotHolding.holding.item.id) // just drop the diob, and the `drop` function handles the rest
-		// 		this.slotHolding.occupied = null // reset data
-		// 		this.slotHolding.atlasName = '' // reset data
-		// 		this.slotHolding.iconName = '' // reset data
-		// 		this.slotHolding.holding = null // reset data
-		// 		this.slotHolding = null // reset data
-		// 		this.setMouseCursor()
-			
-		// 	else if (this.slotHolding && Type.isType(diob.type, 'Interface/Inventory/Background_Image')) /* Dragging out of inventory and onto the map in a dropping manner */
-		// 		this.slotHolding = null // reset data
-		// 		this.setMouseCursor()
-		// 		/* dropping on background */
 
 		aInventory.c_addItemToSlot = function(pItemID, pSlot, pID, pRequiresPrompt=false, pCategory='', pStackable=false, pQuantity=1, pEquippable=false, pCraftsman='') {
-			var item = VS.World.getDiobByID(pItemID);
-			var slotElement = VS.Client.getInterfaceElement('aInventory_interface', 'slot'+pSlot);
-			var newItem = false;
-			var slotGUI;
+			let item = VS.World.getDiobByID(pItemID);
+			let slotElement = VS.Client.getInterfaceElement('aInventory_interface', 'slot'+pSlot);
+			let newItem = false;
+			let slotGUI;
 			if (slotElement) {
 				if (item.type) {
 					if (!VS.Client.mob.c_inventory[pID]) {
@@ -190,13 +173,15 @@
 							slotGUI.iconName = item.iconName + GUI_TAG;
 						}
 						slotElement.info.occupied = true;
-						slotElement.info.item = VS.Client.mob.c_inventory[pID];
-						slotElement.text = '<div class="aInventory_text aInventory_stackNumber">' + '<sub>' + (pQuantity > 1 ? pQuantity : '') +'</sub></div>'
+						VS.Util.copyObject(slotElement.info.item, VS.Client.mob.c_inventory[pID]);
+						slotElement.text = '<div class="aInventory_text aInventory_stackNumber">' + '<sub>' + (pStackable ? VS.Client.mob.c_inventory[pID].quantity : '') +'</sub></div>'
 					}
 					if (!newItem) {
 						if (pStackable) {
 							if (pQuantity) {
 								VS.Client.mob.c_inventory[pID].quantity = pQuantity;
+								slotElement.info.item.quantity = pQuantity;
+								slotElement.text = '<div class="aInventory_text aInventory_stackNumber">' + '<sub>' + (pStackable ? VS.Client.mob.c_inventory[pID].quantity : '') + '</sub></div>';
 							}
 						}
 					}
@@ -207,86 +192,260 @@
 			// item is added to the inventory and can be interacted with
 		}
 
-		aInventory.c_removeItemFromSlot = function(pSlot) {
+		aInventory.c_removeItemFromSlot = function(pSlotID, pQuantity) {
 			// packet to remove the item from clientside
-			// item is removed from the inventory all together
-			// for like using a item and it naturally removes the slot data from this slot, and doesnt drop or anything
+			let slotElement = VS.Client.getInterfaceElement('aInventory_interface', 'slot' + VS.Client.mob.c_inventory[pSlotID].slot);
+			if (VS.Client.mob.c_inventory[pSlotID].quantity === pQuantity) {
+				// reset the slot's data
+				this.c_cleanSlot(slotElement);
+				delete VS.Client.mob.c_inventory[pSlotID];
+			} else {
+				VS.Client.mob.c_inventory[pSlotID].quantity -= pQuantity;
+				VS.Util.copyObject(slotElement.info.item, VS.Client.mob.c_inventory[pSlotID]);
+				slotElement.text = '<div class="aInventory_text aInventory_stackNumber">' + '<sub>' + (VS.Client.mob.c_inventory[pSlotID].stackable ? VS.Client.mob.c_inventory[pSlotID].quantity : '') + '</sub></div>';
+			}			
+		}
+		
+		// if an illegal drop of a slot is made the item is put back into its original slot and all tracking variables are reset
+		// or if a drop isn't completed this is called
+		aInventory.c_restoreSlot = function(pSlotData) {
+			if (!this.busy) {
+				let slot = pSlotData.slot;
+				let slotGUI = slot.overlays[0];
+				VS.Util.copyObject(slot.info, pSlotData.info);
+				slotGUI.atlasName = VS.Type.getVariable(VS.Client.mob.c_inventory[pSlotData.ID].type, 'atlasName');
+				slotGUI.iconName = (VS.Type.getVariable(VS.Client.mob.c_inventory[pSlotData.ID].type, 'iconState') ? VS.Type.getVariable(VS.Client.mob.c_inventory[pSlotData.ID].type, 'iconState') : VS.Type.getVariable(VS.Client.mob.c_inventory[pSlotData.ID].type, 'iconName')) + GUI_TAG;
+				slot.text = '<div class="aInventory_text aInventory_stackNumber">' + '<sub>' + (VS.Client.mob.c_inventory[pSlotData.ID].stackable ? VS.Client.mob.c_inventory[pSlotData.ID].quantity : '') + '</sub></div>';
+				VS.Client.setMouseCursor('');
+				this.heldSlot = null;
+				this.isHoldingSlot = false;
+			}
 		}
 
-		aInventory.c_dropItemFromSlot = function(pSlot) {
+		aInventory.c_drop = function(pSlotID, pQuantity=1) {
+			let item;
+			let x = VS.Client.mob.xPos;
+			let y = VS.Client.mob.yPos;
+			let map = VS.Client.mob.mapName;
+			if (VS.World.global.aRecycle) {
+				item = VS.World.global.aRecycle.isInCollection(VS.Client.mob.c_inventory[pSlotID].type, 1, VS.World.global.aRecycle.basicCollection, false, x, y, map, pQuantity);
+			} else {
+				item = VS.newDiob(pType, x, y, map, pQuantity);
+			}
+			if (item.onDrop && typeof(item.onDrop) === 'function') {
+				item.onDrop();
+			}
+		}
+
+		aInventory.c_dropItemFromSlot = function(pSlotData, pMethod) {
 			// on drop event for the item
 			// item can be dropped on the map or another interface
+			if (!this.busy) {
+				let quantity = 1;
+				VS.Client.setMouseCursor('');
+				this.heldSlot = null;
+				this.isHoldingSlot = false;
+				if (pMethod === 'Interface') {
+					// this is temporary
+					// call a event function here
+					this.c_restoreSlot(pSlotData);
+					return;
+				}
+
+				// if the item requires a prompt it must be a special item, first have the player confirm they want to drop it
+				if (VS.Client.mob.c_inventory[pSlotData.ID].requiresPrompt) {
+					let confirmDropItem = function(pBool, pSlotData, pQuantity) {
+						if (pBool) {
+							this.busy = false;
+							// if you remove this amount of items from the stack and there is still some left, then restore this item to the inventory
+							if ((VS.Client.mob.c_inventory[pSlotData.ID].quantity - pQuantity) > 0) {
+								this.c_restoreSlot(pSlotData);
+							}
+							// separate code to be ran if this isn't a multiplayer game
+							if (VS.World.getPlayerMode() === 1) {
+								this.c_drop(pSlotData.ID, pQuantity);
+							} else {
+								// send packet to drop item. The server will remove the item from the inventory if the drop is legal and send a packet back to the client to do the same
+								VS.Client.sendPacket(VS.World.global.aNetwork.S_AINVENTORY_PACKETS.S_DROP_ITEM_PACKET, [pSlotData.ID, pQuantity]);
+							}
+						} else {
+							this.busy = false;
+							this.c_restoreSlot(pSlotData);
+						}
+					}
+					// if the item you are dropping is stackable, and there is more than one of them, then you need to decide how many to drop.
+					if (VS.Client.mob.c_inventory[pSlotData.ID].stackable && VS.Client.mob.c_inventory[pSlotData.ID].quantity > 1) {
+						let inputQuantity = function(pValue, pSlotData) {
+							let value = parseInt(pValue);
+							quantity = VS.Math.clamp(Number.isInteger(value) ? value : 1, 0, VS.Client.mob.c_inventory[pSlotData.ID].quantity);
+							if (quantity >= 1) {
+								VS.World.global.aInterfaceUtils.confirm('Drop <span style="text-decoration: underline; font-weight: bold;"> ' + quantity + ' </span> ' + VS.Type.getVariable(VS.Client.mob.c_inventory[pSlotData.ID].type, 'displayName') + '?', 'Are you sure?', confirmDropItem.bind(this), [pSlotData, quantity]);
+							} else {
+								this.busy = false;
+								this.c_restoreSlot(pSlotData);								
+							}
+						}
+						VS.World.global.aInterfaceUtils.input('How many would you like to drop?', 1, true, inputQuantity.bind(this), [pSlotData]);
+						this.busy = true;
+					} else {
+						VS.World.global.aInterfaceUtils.confirm('Drop ' + VS.Type.getVariable(VS.Client.mob.c_inventory[pSlotData.ID].type, 'displayName') + '?', 'Are you sure?', confirmDropItem.bind(this), [pSlotData, VS.Client.mob.c_inventory[pSlotData.ID].quantity]);
+						this.busy = true;
+					}
+				} else {
+					// if the item you are dropping is stackable, and there is more than one of them, then you need to decide how many to drop.
+					if (VS.Client.mob.c_inventory[pSlotData.ID].stackable && VS.Client.mob.c_inventory[pSlotData.ID].quantity > 1) {
+						let inputQuantity = function(pValue, pSlotData) {
+							let value = parseInt(pValue);
+							quantity = VS.Math.clamp(Number.isInteger(value) ? value : 1, 0, VS.Client.mob.c_inventory[pSlotData.ID].quantity);
+							if (quantity >= 1) {
+								this.busy = false;
+								// if you remove this amount of items from the stack and there is still left, then restore this item to the inventory
+								if ((VS.Client.mob.c_inventory[pSlotData.ID].quantity - quantity) > 0) {
+									this.c_restoreSlot(pSlotData);
+								}
+								// separate code to be ran if this isn't a multiplayer game
+								if (VS.World.getPlayerMode() === 1) {
+									this.c_drop(pSlotData.ID, quantity);
+								} else {
+									// if the item does not require a prompt, send a packet to drop the item. The server will remove the item from the inventory if the drop is legal and send a packet back to the client to do the same
+									VS.Client.sendPacket(VS.World.global.aNetwork.S_AINVENTORY_PACKETS.S_DROP_ITEM_PACKET, [pSlotData.ID, quantity]);
+								}
+							} else {
+								this.busy = false;
+								this.c_restoreSlot(pSlotData);
+							}
+						}
+						VS.World.global.aInterfaceUtils.input('How many would you like to drop?', 1, true, inputQuantity.bind(this), [pSlotData]);
+						this.busy = true;
+					} else {
+						// separate code to be ran if this isn't a multiplayer game
+						if (VS.World.getPlayerMode() === 1) {
+							this.c_drop(pSlotData.ID);
+						} else {
+							// if the item does not require a prompt, send a packet to drop the item. The server will remove the item from the inventory if the drop is legal and send a packet back to the client to do the same
+							VS.Client.sendPacket(VS.World.global.aNetwork.S_AINVENTORY_PACKETS.S_DROP_ITEM_PACKET, [pSlotData.ID]);
+						}
+					}
+				}
+			}
+		}
+
+		aInventory.c_getInventory = function() {
+			let copyOfInventory = {};
+			VS.Util.copyObject(copyOfInventory, VS.Client.mob.c_inventory);
+			return copyOfInventory;
 		}
 
 		aInventory.c_wipeInventory = function() {
-
+			for (let item in VS.Client.mob.c_inventory) {
+				let slotElement = VS.Client.getInterfaceElement('aInventory_interface', 'slot' + VS.Client.mob.c_inventory[item].slot);
+				this.c_cleanSlot(slotElement);
+			}
+			this.hideInfoMenu();
+			VS.Client.mob.c_inventory = {};
+			if (VS.World.getPlayerMode() !== 1) {
+				VS.Client.sendPacket(VS.World.global.aNetwork.S_AINVENTORY_PACKETS.S_WIPE_INVENTORY_PACKET);
+			}
 		}
 
 		// clears away any binding information from this slot
 		aInventory.c_cleanSlot = function(pSlot) {
-			pSlot.info.occupied = false;
-			pSlot.info.item = null;
-			pSlot.info.equipped = false;
-			pSlot.text = '';
-			pSlot.overlays[0].atlasName = ''
-			pSlot.overlays[0].iconName = '';
+			if (!this.busy) {
+				pSlot.info.occupied = false;
+				pSlot.info.item = {};
+				pSlot.info.equipped = false;
+				pSlot.text = '';
+				pSlot.overlays[0].atlasName = ''
+				pSlot.overlays[0].iconName = '';
+			}
 		}
 
 		// just moving slot data to and from slots
 		aInventory.c_swapSlotItems = function(pSlotData, pSlot2) {
-			let slot1Item = pSlotData.info.item;
-			let slot2Item = pSlot2.info.item;
+			if (!this.busy) {
+				let slot1 = pSlotData.slot;
+				let firstSlotNumber = parseInt(slot1.name.match(/(\d+)/).pop());
+				let secondSlotNumber = parseInt(pSlot2.name.match(/(\d+)/).pop());
 
-			pSlotData.slot.info.item = slot2Item;
-			pSlot2.info.item = slot1Item;
+				VS.Util.copyObject(slot1.info, pSlot2.info);
+				VS.Util.copyObject(pSlot2.info, pSlotData.info);
 
-			let slot1GUI = pSlotData.slot.overlays[0];
-			let slot2GUI = pSlot2.overlays[0];
+				VS.Client.mob.c_inventory[slot1.info.item.ID].slot = firstSlotNumber;
+				VS.Client.mob.c_inventory[pSlot2.info.item.ID].slot = secondSlotNumber;
+				slot1.info.item.slot = firstSlotNumber;
+				pSlot2.info.item.slot = secondSlotNumber;
 
-			slot1GUI.atlasName = VS.Type.getVariable(pSlotData.slot.info.item.type, 'atlasName');
-			slot2GUI.atlasName = VS.Type.getVariable(pSlot2.info.item.type, 'atlasName');
-			slot1GUI.iconName = (VS.Type.getVariable(pSlotData.slot.info.item.type, 'iconState') ? VS.Type.getVariable(pSlotData.slot.info.item.type, 'iconState') : VS.Type.getVariable(pSlotData.slot.info.item.type, 'iconName')) + GUI_TAG;
-			slot2GUI.iconName = (VS.Type.getVariable(pSlot2.info.item.type, 'iconState') ? VS.Type.getVariable(pSlot2.info.item.type, 'iconState') : VS.Type.getVariable(pSlot2.info.item.type, 'iconName')) + GUI_TAG;
+				let slot1GUI = slot1.overlays[0];
+				let slot2GUI = pSlot2.overlays[0];
 
-			pSlotData.slot.info.occupied = true;
-			pSlot2.info.occupied = true;
+				slot1GUI.atlasName = VS.Type.getVariable(slot1.info.item.type, 'atlasName');
+				slot2GUI.atlasName = VS.Type.getVariable(pSlot2.info.item.type, 'atlasName');
+				slot1GUI.iconName = (VS.Type.getVariable(slot1.info.item.type, 'iconState') ? VS.Type.getVariable(slot1.info.item.type, 'iconState') : VS.Type.getVariable(slot1.info.item.type, 'iconName')) + GUI_TAG;
+				slot2GUI.iconName = (VS.Type.getVariable(pSlot2.info.item.type, 'iconState') ? VS.Type.getVariable(pSlot2.info.item.type, 'iconState') : VS.Type.getVariable(pSlot2.info.item.type, 'iconName')) + GUI_TAG;
 
-			pSlotData.slot.text = '<div class="aInventory_text aInventory_stackNumber">' + '<sub>' + (pSlotData.slot.info.item.quantity > 1 ? pSlotData.slot.info.item.quantity : '') +'</sub></div>';
-			pSlot2.text = '<div class="aInventory_text aInventory_stackNumber">' + '<sub>' + (pSlot2.info.item.quantity > 1 ? pSlot2.info.item.quantity : '') +'</sub></div>';
+				// add overlays here based on equipped value
+				// if (pSlot2.info.equipped) {
 
-			this.heldSlot = null;
-			aInventory.showInfoMenu(pSlot2);
-			VS.Client.setMouseCursor('pointer');
+				// }
+
+				// if (slot1.info.equipped) {
+
+				// }
+
+				slot1.text = '<div class="aInventory_text aInventory_stackNumber">' + '<sub>' + (VS.Client.mob.c_inventory[slot1.info.item.ID].stackable ? VS.Client.mob.c_inventory[slot1.info.item.ID].quantity : '') + '</sub></div>';
+				pSlot2.text = '<div class="aInventory_text aInventory_stackNumber">' + '<sub>' + (VS.Client.mob.c_inventory[pSlot2.info.item.ID].stackable ? VS.Client.mob.c_inventory[pSlot2.info.item.ID].quantity : '') + '</sub></div>';
+
+				this.heldSlot = null;
+				this.isHoldingSlot = false;
+				aInventory.showInfoMenu(pSlot2);
+				VS.Client.setMouseCursor('pointer');
+				if (VS.World.getPlayerMode() !== 1) {
+					VS.Client.sendPacket(VS.World.global.aNetwork.S_AINVENTORY_PACKETS.S_SWAP_SLOT_ITEMS_PACKET, [slot1.info.item.ID, pSlot2.info.item.ID, firstSlotNumber, secondSlotNumber]);
+				}
+			}
 		}
 
 		// move a slot to a empty slot
 		aInventory.c_moveSlotItem = function(pSlotData, pSlot2) {
-			let slot2GUI;
+			if (!this.busy) {
+				if (pSlotData.info.item.slot === parseInt(pSlot2.name.match(/(\d+)/).pop())) {
+					this.c_restoreSlot(pSlotData);
+					return;
+				}
+				let slot2GUI;
 
-			pSlot2.info.item = pSlotData.info.item;
-			pSlot2.info.occupied = true;
+				VS.Util.copyObject(pSlot2.info, pSlotData.info);
+				VS.Client.mob.c_inventory[pSlot2.info.item.ID].slot = parseInt(pSlot2.name.match(/(\d+)/).pop());
+				pSlot2.info.item.slot = VS.Client.mob.c_inventory[pSlot2.info.item.ID].slot;
 
-			if (pSlot2.overlays.length) {
-				slot2GUI = pSlot2.overlays[0];
-			} else {
-				slot2GUI = pSlot2.addOverlay('Overlay/SlotGUI', { 'ownState': true }, true);
+				if (pSlot2.overlays.length) {
+					slot2GUI = pSlot2.overlays[0];
+				} else {
+					slot2GUI = pSlot2.addOverlay('Overlay/SlotGUI', { 'ownState': true }, true);
+				}
+				slot2GUI.atlasName = VS.Type.getVariable(pSlot2.info.item.type, 'atlasName');
+				slot2GUI.iconName = (VS.Type.getVariable(pSlot2.info.item.type, 'iconState') ? VS.Type.getVariable(pSlot2.info.item.type, 'iconState') : VS.Type.getVariable(pSlot2.info.item.type, 'iconName')) + GUI_TAG;
+
+				pSlot2.text = '<div class="aInventory_text aInventory_stackNumber">' + '<sub>' + (VS.Client.mob.c_inventory[pSlot2.info.item.ID].stackable ? VS.Client.mob.c_inventory[pSlot2.info.item.ID].quantity : '') + '</sub></div>';
+
+				this.heldSlot = null;
+				this.isHoldingSlot = false;
+				aInventory.showInfoMenu(pSlot2);
+				VS.Client.setMouseCursor('pointer');
+				if (VS.World.getPlayerMode() !== 1) {
+					VS.Client.sendPacket(VS.World.global.aNetwork.S_AINVENTORY_PACKETS.S_MOVE_SLOT_ITEM_PACKET, [pSlot2.info.item.ID, pSlot2.info.item.slot]);
+				}
 			}
-			slot2GUI.atlasName = VS.Type.getVariable(pSlot2.info.item.type, 'atlasName');
-			slot2GUI.iconName = (VS.Type.getVariable(pSlot2.info.item.type, 'iconState') ? VS.Type.getVariable(pSlot2.info.item.type, 'iconState') : VS.Type.getVariable(pSlot2.info.item.type, 'iconName')) + GUI_TAG;
-
-			pSlot2.text = '<div class="aInventory_text aInventory_stackNumber">' + '<sub>' + (pSlot2.info.item.quantity > 1 ? pSlot2.info.item.quantity : '') +'</sub></div>';
-
-			this.heldSlot = null;
-			aInventory.showInfoMenu(pSlot2);
-			VS.Client.setMouseCursor('pointer');
 		}
 
 		// show a information menu for the item that is in this slot
 		aInventory.showInfoMenu = function(pSlot) {
-			if (this.infoMenu.isHidden) {
-				this.infoMenu.show();
-				this.infoMenu.text = '<div class="aInventory_text">' + VS.Type.getVariable(pSlot.info.item.type, 'displayName') + '<div class="aKeybinds_floatRight">' + pSlot.info.item.category + '</div><hr>' + VS.Type.getVariable(pSlot.info.item.type, 'description') + '</div>';
-				this.positionInfoMenu();
+			if (!this.busy) {
+				if (this.infoMenu.isHidden) {
+					this.infoMenu.show();
+					this.infoMenu.text = '<div class="aInventory_text">' + VS.Type.getVariable(pSlot.info.item.type, 'displayName') + '<div class="aKeybinds_floatRight">' + pSlot.info.item.category + '</div><hr>' + VS.Type.getVariable(pSlot.info.item.type, 'description') + '</div>';
+					this.positionInfoMenu();
+				}
 			}
 		}
 
@@ -299,26 +458,33 @@
 
 		// position the menu when the mouse moves
 		aInventory.positionInfoMenu = function() {
-			var mousePos = VS.Client.getMousePos();
-			var x;
-			var y;
-			if (this.infoMenu.preventAutoScale) {
-				mousePos.x *= VS.Client._screenScale.x;
-				mousePos.y *= VS.Client._screenScale.y;
+			if (!this.busy) {
+				var mousePos = VS.Client.getMousePos();
+				var x;
+				var y;
+				if (this.infoMenu.preventAutoScale) {
+					mousePos.x *= VS.Client._screenScale.x;
+					mousePos.y *= VS.Client._screenScale.y;
+				}
+
+				x = mousePos.x;
+				y = mousePos.y - VS.World.global.aInventory.infoMenu.height;
+
+				if (x + VS.World.global.aInventory.infoMenu.width > VS.Client._windowSize.width) {
+					x = mousePos.x - VS.World.global.aInventory.infoMenu.width;
+				}
+
+				if (y < 0) {
+					y = mousePos.y;
+				}
+
+				this.infoMenu.setPos(x, y);
 			}
+		}
 
-			x = mousePos.x;
-			y = mousePos.y - VS.World.global.aInventory.infoMenu.height;
-
-			if (x + VS.World.global.aInventory.infoMenu.width > VS.Client._windowSize.width) {
-				x = mousePos.x - VS.World.global.aInventory.infoMenu.width;
-			}
-
-			if (y < 0) {
-				y = mousePos.y;
-			}
-
-			this.infoMenu.setPos(x, y);
+		// toggle the debug mode, which allows descriptive text to be shown when things of notice happen
+		aInventory.toggleDebug = function() {
+			this.debugging = (this.debugging ? false : true);
 		}
 	}
 })();
@@ -355,27 +521,27 @@ Interface
 				// if a item in currently in this slot or not
 				'occupied': false,
 				// the item that this slot is currently holding
-				'item': null,
+				'item': {},
 				// if the item is equpped
 				'equipped': false
 			}
 
 			onMouseMove(pClient, pX, pY)
-				if (!aInventory.grabbing && !aInventory.heldSlot)
+				if (!aInventory.grabbing && !aInventory.isHoldingSlot)
 					if (!aInventory.infoMenu.isHidden)
 						aInventory.positionInfoMenu()
 
 			onMouseEnter(pClient, pX, pY)
 				if (!pClient.dragging)
 					this.iconState = 'highlighted'
-					if (!aInventory.grabbing && !aInventory.heldSlot)
+					if (!aInventory.grabbing && !aInventory.isHoldingSlot)
 						if (this.info.occupied)
 							pClient.setMouseCursor('pointer')
 							aInventory.showInfoMenu(this)
 
 			onMouseExit(pClient, pX, pY)
 				this.iconState = ''
-				if (!aInventory.grabbing && !aInventory.heldSlot)
+				if (!aInventory.grabbing && !aInventory.isHoldingSlot)
 					pClient.setMouseCursor('')
 					aInventory.hideInfoMenu()
 
@@ -418,14 +584,14 @@ Diob
 
 		VS.World.global.aInventory = aInventory;
 		
-		const MAX_SLOTS = 20;
-		const REACHING_RANGE = 48;
+		const MAX_SLOTS = parseInt((VS.World.global.MAX_SLOTS ? VS.World.global.MAX_SLOTS : 20));
+		const REACHING_RANGE = parseInt((VS.World.global.REACHING_RANGE ? VS.World.global.REACHING_RANGE : 48));
 
 		aInventory.generateID = function(pID = 3) {
-			var ID = '';
-			var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+			let ID = '';
+			let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
-			for (var i = 0; i < pID; i++) {
+			for (let i = 0; i < pID; i++) {
 				ID += chars.charAt(Math.floor(Math.random() * chars.length));
 			}
 			return ID;
@@ -433,8 +599,11 @@ Diob
 
 		aInventory.addItemToSlot = function(pClient, pItem) {
 			if (pItem && pItem.obtainable && VS.Map.getDist(pClient.mob, pItem) <= REACHING_RANGE) {
-				if (Object.keys(pClient.mob.inventory).length === MAX_SLOTS) {
-					console.error('aInventory Module [addItemToSlot]: %cpNo available slots', 'font-weight: bold');
+				// if you have the max amount of items in your inventory already and the item you are picking up isn't stackable then you can't pick anything up
+				if (Object.keys(pClient.mob.inventory).length === MAX_SLOTS && !pItem.stackable) {
+					if (this.debugging) {
+						console.error('aInventory Module [addItemToSlot]: %cpNo available slots', 'font-weight: bold');
+					}
 					return;
 				}
 				// what category this item belongs too
@@ -459,7 +628,7 @@ Diob
 				var type = pItem.type;
 
 				// get the number of each slot that is currently occupied in this inventory
-				for (var item of Object.keys(pClient.mob.inventory)) {
+				for (let item of Object.keys(pClient.mob.inventory)) {
 					occupiedSlots.push(pClient.mob.inventory[item].slot);
 				}
 
@@ -470,14 +639,8 @@ Diob
 						break
 					}
 				}
-				
-				var inventoryItemID = this.generateID();
-				while (Object.keys(pClient.mob.c_inventory).includes(inventoryItemID)) {
-					inventoryItemID = this.generateID();
-				}
-				
 				// loop through the inventory and see if this item already exists
-				for (var item of Object.keys(pClient.mob.inventory)) {
+				for (let item of Object.keys(pClient.mob.inventory)) {
 					// if this item already exists in the inventory
 					if (pClient.mob.inventory[item].type === type) {
 						// if the item is stackable
@@ -490,13 +653,21 @@ Diob
 									if (pClient.mob.inventory[item].quantity + quantity > maxQuantity) {
 										var leftOverQuantity = (pClient.mob.inventory[item].quantity + quantity) - maxQuantity;
 										pClient.mob.inventory[item].quantity = VS.Math.clamp(pClient.mob.inventory[item].quantity + quantity, pClient.mob.inventory[item].quantity, maxQuantity);
-										pClient.sendPacket(VS.World.global.aNetwork.C_AINVENTORY_PACKETS.C_ADD_ITEM_TO_SLOT_PACKET, [pItem.id, pClient.mob.inventory[item].slot, inventoryItemID, undefined, category, 1, pClient.mob.inventory[item].quantity]);
+										pClient.sendPacket(VS.World.global.aNetwork.C_AINVENTORY_PACKETS.C_ADD_ITEM_TO_SLOT_PACKET, [pItem.id, pClient.mob.inventory[item].slot, pClient.mob.inventory[item].ID, undefined, category, 1, pClient.mob.inventory[item].quantity]);
 										pItem.quantity = leftOverQuantity;
+										// we allowed items to bypass the MAX_SLOTS if they are stackable, since those are not technically items. If you have max slots, then you cannot add the remainder of this item so return out.
+										if (Object.keys(pClient.mob.inventory).length === MAX_SLOTS) {
+											if (this.debugging) {
+												console.error('aInventory Module [addItemToSlot]: %cpNo available slots', 'font-weight: bold');
+											}
+											return;
+										}
 										this.addItemToSlot(pClient, pItem);
+										return;
 									// if you can pick up the full amount of this item, then delete this item
 									} else {
 										pClient.mob.inventory[item].quantity = VS.Math.clamp(pClient.mob.inventory[item].quantity + quantity, pClient.mob.inventory[item].quantity, maxQuantity);
-										pClient.sendPacket(VS.World.global.aNetwork.C_AINVENTORY_PACKETS.C_ADD_ITEM_TO_SLOT_PACKET, [pItem.id, pClient.mob.inventory[item].slot, inventoryItemID, undefined, category, 1, pClient.mob.inventory[item].quantity]);
+										pClient.sendPacket(VS.World.global.aNetwork.C_AINVENTORY_PACKETS.C_ADD_ITEM_TO_SLOT_PACKET, [pItem.id, pClient.mob.inventory[item].slot, pClient.mob.inventory[item].ID, undefined, category, 1, pClient.mob.inventory[item].quantity]);
 										this.removeItemFromMap(pItem);
 									}
 									return;
@@ -505,13 +676,21 @@ Diob
 						}
 					}
 				}
-				
+
 				// if this item does not exist in the inventory already
-				if (occupiedSlots.length !== MAX_SLOTS) {
+				// and if this inventory can hold more items
+				if (Object.keys(pClient.mob.inventory).length !== MAX_SLOTS) {
+					// this item does not exist in the inventory, therefore a new ID for it must be created
+					let inventoryItemID = this.generateID();
+					while (Object.keys(pClient.mob.inventory).includes(inventoryItemID)) {
+						inventoryItemID = this.generateID();
+					}
 					this.storeItemInInventory(pClient, pItem, inventoryItemID, nearestOpenSlot, requiresPrompt, category, stackable, quantity, equippable, craftsman, type);
 				} else {
-					// there is no room for this item. You cannot pick it up. Send a packet saying `inventory full?`
-					console.error('aInventory Module [addItemToSlot]: %cpNo available slots', 'font-weight: bold');					
+					if (this.debugging) {
+						// there is no room for this item. You cannot pick it up. Send a packet saying `inventory full?`
+						console.error('aInventory Module [addItemToSlot]: %cpNo available slots', 'font-weight: bold');
+					}				
 				}
 
 				// packet to add to clientside
@@ -537,12 +716,16 @@ Diob
 		}
 
 		// a function to add an item to the map
-		aInventory.addItemToMap = function(pClient/*Extra params*/) {
+		aInventory.addItemToMap = function(pClient, pType, pX, pY, pMap, pQuantity) {
+			let item
 			if (VS.World.global.aRecycle) {
-				// VS.World.global.aRecycle.isInCollection(/*something here*/);
+				item = VS.World.global.aRecycle.isInCollection(pType, 1, VS.World.global.aRecycle.basicCollection, false, pX, pY, pMap, pQuantity);
 			} else {
-				// VS.newDiob(/*something here */);
-			}			
+				item = VS.newDiob(pType, pX, pY, pMap, pQuantity);
+			}
+			if (item.onDrop && typeof(item.onDrop) === 'function') {
+				item.onDrop();
+			}
 		}
 
 		// a function to remove or collect this diob from the map
@@ -557,51 +740,99 @@ Diob
 			}
 		}
 
-		aInventory.removeItemFromSlot = function(pClient, pSlotID) {
-			// packet to remove the item from clientside
-			// item is removed from the inventory all together
+		// function to remove the whole item or apart of it from server and clientside inventory
+		aInventory.removeItemFromSlot = function(pClient, pSlotID, pQuantity) {
+			// if you have the exact amount of this item that you are dropping, remove the entire item
+			if (pClient.mob.inventory[pSlotID].quantity === pQuantity) {
+				delete pClient.mob.inventory[pSlotID];
+			} else {
+				pClient.mob.inventory[pSlotID].quantity -= pQuantity;
+			}
+			pClient.sendPacket(VS.World.global.aNetwork.C_AINVENTORY_PACKETS.C_REMOVE_ITEM_FROM_SLOT_PACKET, [pSlotID, pQuantity])
 		}
 
 		aInventory.updateSlotItem = function(pClient, pSlotID) {
 
 		}
 
-		aInventory.lockSlot = function(pClient, pSlotID) {
-			// item is locked and no events can be used on item
-			// useful for admins
-		}
-
-		aInventory.dropItemFromSlot = function(pClient, pSlotID) {
-			// on drop event for the item
-			// item can be dropped on the map or another interface
+		aInventory.dropItem = function(pClient, pSlotID, pQuantity=1) {
+			let quantity = 1;
+			// if the item exists in the inventory
+			if (pClient.mob.inventory[pSlotID]) {
+				if (pQuantity > 1) {
+					// you have enough in your inventory to drop this amount
+					if (pClient.mob.inventory[pSlotID].quantity >= pQuantity) {
+						let value = parseInt(pQuantity);
+						quantity = Number.isInteger(value) ? value : 1;
+					} else {
+						// you do not have this much to drop, drop the max of this item (which means the entire item itself)
+						quantity = pClient.mob.inventory[pSlotID].quantity;
+					}
+				}
+				this.addItemToMap(pClient, pClient.mob.inventory[pSlotID].type, pClient.mob.xPos, pClient.mob.yPos, pClient.mob.mapName, quantity);
+				this.removeItemFromSlot(pClient, pSlotID, quantity);
+			}
 		}
 
 		aInventory.getInventory = function(pClient) {
-
+			let copyOfInventory = {};
+			VS.Util.copyObject(copyOfInventory, pClient.mob.inventory);
+			return copyOfInventory;
 		}
 
 		aInventory.wipeInventory = function(pClient) {
-
-		}
-
-		// clears away any binding information from this slot
-		aInventory.cleanSlot = function(pClient, pSlotID) {
-
+			pClient.mob.inventory = {};
+			// save data
 		}
 
 		// just moving slot data to and from slots
-		aInventory.swapSlotItems = function(pClient, pSlotID, pSlot2ID) {
-			if (pClient.mob.inventory[pSlotID] && pClient.mob.inventory[pSlot2ID]) {
-
-			} else {
-				console.error('aInventory Module: Invalid %cpSlotID && pSlot2ID', 'font-weight: bold', '. These ID\'s do not exist in this pClient.mob.inventory.)');
+		aInventory.swapSlotItems = function(pClient, pSlotID, pSlot2ID, pSlotNumber, pSlotNumber2) {
+			let slotNumber = parseInt(pSlotNumber);
+			let slotNumber2 = parseInt(pSlotNumber2);
+			
+			if (!Number.isInteger(slotNumber) || !Number.isInteger(slotNumber2)) {
+				if (this.debugging) {
+					console.error('aInventory Module: Invalid %cpSlotNumber | pSlotNumber2', 'font-weight: bold', ' parameter.');
+					return;
+				}
 			}
 
+			if (pClient.mob.inventory[pSlotID] && pClient.mob.inventory[pSlot2ID]) {
+				pClient.mob.inventory[pSlotID].slot = pSlotNumber;
+				pClient.mob.inventory[pSlot2ID].slot = pSlotNumber2;
+			} else {
+				if (this.debugging) {
+					console.error('aInventory Module: Invalid %cpSlotID && pSlot2ID', 'font-weight: bold', '. These ID\'s do not exist in this pClient.mob.inventory.');
+				}
+			}
 		}
 
 		// move a slot to a empty slot
-		aInventory.moveSlotItem = function(pClient, pSlotID, pSlot2) {
-
+		aInventory.moveSlotItem = function(pClient, pSlotID, pSlotNumber) {
+			let taken = false;
+			// if that id exists inside of this inventory
+			if (pClient.mob.inventory[pSlotID]) {
+				// checks if this new slot is already taken by another item in the inventory
+				for (let item of Object.keys(pClient.mob.inventory)) {
+					// if this slot is already being used by another item in this inventory, this swap is invalid
+					if ((pClient.mob.inventory[item].slot !== pClient.mob.inventory[pSlotID].slot) && pClient.mob.inventory[item].slot === pSlotNumber) {
+						taken = true;
+						break;
+					}
+				}
+				// if there is no slot that is in this slot, then its free to assign it
+				if (!taken) {
+					pClient.mob.inventory[pSlotID].slot = pSlotNumber;
+				} else {
+					if (this.debugging) {
+						console.error('aInventory Module: A item in this inventory is already occupying %cpSlotNumber', 'font-weight: bold');
+					}
+				}
+			} else {
+				if (this.debugging) {
+					console.error('aInventory Module: Invalid %cpSlotID', 'font-weight: bold', '. This ID does not exist in pClient.mob.inventory.');
+				}
+			}
 		}
 
 	}
@@ -634,6 +865,23 @@ Diob
 		mouseOpacity = 1
 		plane = 1
 		layer = 4
+
+		onNew(pX, pY, pMap, pQuantity)
+			this.setup(pX, pY, pMap, pQuantity)
+
+		function onDumped(pX, pY, pMap, pQuantity)
+			this.setup(pX, pY, pMap, pQuantity)
+
+		function setup(pX, pY, pMap, pQuantity)
+			if ((pX || pX === 0) && (pY || pY === 0) && pMap)
+				if (pQuantity)
+					this.quantity = pQuantity
+				this.setPos(pX, pY, pMap)
+				this.obtainable = true
+
+		function clean()
+			this.quantity = 1
+			this.obtainable = false
 
 		function onPickup()
 
