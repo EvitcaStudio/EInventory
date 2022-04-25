@@ -1,10 +1,10 @@
 #ENABLE LOCALCLIENTCODE
 #BEGIN CLIENTCODE
 #BEGIN JAVASCRIPT
-(function() {
+(() => {
 /* 	let ticks = 0
-	let ticksBeforeAbort = 3000; // (1500 * 4) // 12 seconds. */
-	let engineWaitId = setInterval(function() {
+	const ticksBeforeAbort = 3000; // (1500 * 4) // 12 seconds. */
+	const engineWaitId = setInterval(() => {
 		if (VS.Client && VS.World.global && VS.Client.aInterfaceUtils && PIXI.filters) {
 			clearInterval(engineWaitId);
 			buildClientInventory();
@@ -21,7 +21,7 @@
 		} */
 	});
 
-	let buildClientInventory = function() {
+	const buildClientInventory = () => {
 		let aInventory = {};
 		if (VS.World.getCodeType() === 'local') {
 			if (VS.World.global.aInventory) {
@@ -40,7 +40,7 @@
 		aInventory._onConnect = VS.Type.getFunction('Client', 'onConnect');
 
 		// the function that will be used as the `pClient.onConnect` function
-		let onConnect = function() {
+		const onConnect = function() {
 			// a reference to the information window that appears when hovering over an item
 			VS.World.global.aInventory.infoMenu = this.getInterfaceElement('aInventory_interface', 'infomenu');
 			if (VS.World.global.aInventory._onConnect) {
@@ -67,9 +67,9 @@
 					if (this.mob.canUseInventory) {
 						if (!aInventory.busy) {
 							if (pDiob && pDiob.type === 'Interface/Inventory_Interface/Slot') {
-								let slotElement = pDiob;
+								const slotElement = pDiob;
 								if (slotElement.info.occupied) {
-									let slotElementInfo = {};
+									const slotElementInfo = {};
 									VS.Util.copyObject(slotElementInfo, slotElement.info);
 									aInventory.heldSlot = { 'slot': slotElement, 'info': slotElementInfo, 'ID': slotElementInfo.item.ID };
 									aInventory.isHoldingSlot = true;
@@ -78,9 +78,9 @@
 									if (!this.aInventoryMouseCursor) {
 										this.aInventoryMouseCursor = VS.newDiob();
 									}
-									let atlasName = VS.Type.getVariable(slotElement.info.item.type, 'atlasName');
-									let iconName = VS.Type.getVariable(slotElement.info.item.type, 'iconName');
-									let iconState = VS.Type.getVariable(slotElement.info.item.type, 'iconState');
+									const atlasName = VS.Type.getVariable(slotElement.info.item.type, 'atlasName');
+									const iconName = VS.Type.getVariable(slotElement.info.item.type, 'iconName');
+									const iconState = VS.Type.getVariable(slotElement.info.item.type, 'iconState');
 									this.aInventoryMouseCursor.atlasName = atlasName;
 									this.aInventoryMouseCursor.iconName = iconName;
 									this.aInventoryMouseCursor.iconState = iconState;
@@ -114,7 +114,7 @@
 									// if this diob is a map diob, drop it onto the map
 									aInventory.c_dropItemFromSlot(aInventory.heldSlot);
 								} else if (aInventory.heldSlot && pDiob.type === 'Interface/Inventory_Interface/Slot') {
-									let slotElement = pDiob;
+									const slotElement = pDiob;
 									if (slotElement.info.occupied) {
 										// slotElement has something in it
 										aInventory.c_swapSlotItems(aInventory.heldSlot, slotElement);
@@ -142,8 +142,8 @@
 		}
 
 		aInventory.c_addItemToSlot = function(pItemID, pSlot, pID, pRequiresPrompt=false, pCategory='', pStackable=false, pQuantity=1, pEquippable=false, pCraftsman='') {
-			let item = VS.World.getDiobByID(pItemID);
-			let slotElement = VS.Client.getInterfaceElement('aInventory_interface', 'slot'+pSlot);
+			const item = VS.World.getDiobByID(pItemID);
+			const slotElement = VS.Client.getInterfaceElement('aInventory_interface', 'slot'+pSlot);
 			let newItem = false;
 			let slotGUI;
 			if (slotElement) {
@@ -194,7 +194,7 @@
 
 		aInventory.c_removeItemFromSlot = function(pSlotID, pQuantity) {
 			// packet to remove the item from clientside
-			let slotElement = VS.Client.getInterfaceElement('aInventory_interface', 'slot' + VS.Client.mob.c_inventory[pSlotID].slot);
+			const slotElement = VS.Client.getInterfaceElement('aInventory_interface', 'slot' + VS.Client.mob.c_inventory[pSlotID].slot);
 			if (VS.Client.mob.c_inventory[pSlotID].quantity === pQuantity) {
 				// reset the slot's data
 				this.c_cleanSlot(slotElement);
@@ -210,8 +210,8 @@
 		// or if a drop isn't completed this is called
 		aInventory.c_restoreSlot = function(pSlotData) {
 			if (!this.busy) {
-				let slot = pSlotData.slot;
-				let slotGUI = slot.overlays[0];
+				const slot = pSlotData.slot;
+				const slotGUI = slot.overlays[0];
 				VS.Util.copyObject(slot.info, pSlotData.info);
 				slotGUI.atlasName = VS.Type.getVariable(VS.Client.mob.c_inventory[pSlotData.ID].type, 'atlasName');
 				slotGUI.iconName = (VS.Type.getVariable(VS.Client.mob.c_inventory[pSlotData.ID].type, 'iconState') ? VS.Type.getVariable(VS.Client.mob.c_inventory[pSlotData.ID].type, 'iconState') : VS.Type.getVariable(VS.Client.mob.c_inventory[pSlotData.ID].type, 'iconName')) + GUI_TAG;
@@ -224,9 +224,9 @@
 
 		aInventory.c_drop = function(pSlotID, pQuantity=1) {
 			let item;
-			let x = VS.Client.mob.xPos;
-			let y = VS.Client.mob.yPos;
-			let map = VS.Client.mob.mapName;
+			const x = VS.Client.mob.xPos;
+			const y = VS.Client.mob.yPos;
+			const map = VS.Client.mob.mapName;
 			if (VS.World.global.aRecycle) {
 				item = VS.World.global.aRecycle.isInCollection(VS.Client.mob.c_inventory[pSlotID].type, 1, VS.World.global.aRecycle.basicCollection, false, x, y, map, pQuantity);
 			} else {
@@ -254,7 +254,7 @@
 
 				// if the item requires a prompt it must be a special item, first have the player confirm they want to drop it
 				if (VS.Client.mob.c_inventory[pSlotData.ID].requiresPrompt) {
-					let confirmDropItem = function(pBool, pSlotData, pQuantity) {
+					const confirmDropItem = function(pBool, pSlotData, pQuantity) {
 						if (pBool) {
 							this.busy = false;
 							// if you remove this amount of items from the stack and there is still some left, then restore this item to the inventory
@@ -275,8 +275,8 @@
 					}
 					// if the item you are dropping is stackable, and there is more than one of them, then you need to decide how many to drop.
 					if (VS.Client.mob.c_inventory[pSlotData.ID].stackable && VS.Client.mob.c_inventory[pSlotData.ID].quantity > 1) {
-						let inputQuantity = function(pValue, pSlotData) {
-							let value = parseInt(pValue);
+						const inputQuantity = function(pValue, pSlotData) {
+							const value = parseInt(pValue);
 							quantity = VS.Math.clamp(Number.isInteger(value) ? value : 1, 0, VS.Client.mob.c_inventory[pSlotData.ID].quantity);
 							if (quantity >= 1) {
 								VS.World.global.aInterfaceUtils.confirm('Drop <span style="text-decoration: underline; font-weight: bold;"> ' + quantity + ' </span> ' + VS.Type.getVariable(VS.Client.mob.c_inventory[pSlotData.ID].type, 'displayName') + '?', 'Are you sure?', confirmDropItem.bind(this), [pSlotData, quantity]);
@@ -294,8 +294,8 @@
 				} else {
 					// if the item you are dropping is stackable, and there is more than one of them, then you need to decide how many to drop.
 					if (VS.Client.mob.c_inventory[pSlotData.ID].stackable && VS.Client.mob.c_inventory[pSlotData.ID].quantity > 1) {
-						let inputQuantity = function(pValue, pSlotData) {
-							let value = parseInt(pValue);
+						const inputQuantity = function(pValue, pSlotData) {
+							const value = parseInt(pValue);
 							quantity = VS.Math.clamp(Number.isInteger(value) ? value : 1, 0, VS.Client.mob.c_inventory[pSlotData.ID].quantity);
 							if (quantity >= 1) {
 								this.busy = false;
@@ -331,14 +331,14 @@
 		}
 
 		aInventory.c_getInventory = function() {
-			let copyOfInventory = {};
+			const copyOfInventory = {};
 			VS.Util.copyObject(copyOfInventory, VS.Client.mob.c_inventory);
 			return copyOfInventory;
 		}
 
 		aInventory.c_wipeInventory = function() {
-			for (let item in VS.Client.mob.c_inventory) {
-				let slotElement = VS.Client.getInterfaceElement('aInventory_interface', 'slot' + VS.Client.mob.c_inventory[item].slot);
+			for (const item in VS.Client.mob.c_inventory) {
+				const slotElement = VS.Client.getInterfaceElement('aInventory_interface', 'slot' + VS.Client.mob.c_inventory[item].slot);
 				this.c_cleanSlot(slotElement);
 			}
 			this.hideInfoMenu();
@@ -363,9 +363,9 @@
 		// just moving slot data to and from slots
 		aInventory.c_swapSlotItems = function(pSlotData, pSlot2) {
 			if (!this.busy) {
-				let slot1 = pSlotData.slot;
-				let firstSlotNumber = parseInt(slot1.name.match(/(\d+)/).pop());
-				let secondSlotNumber = parseInt(pSlot2.name.match(/(\d+)/).pop());
+				const slot1 = pSlotData.slot;
+				const firstSlotNumber = parseInt(slot1.name.match(/(\d+)/).pop());
+				const secondSlotNumber = parseInt(pSlot2.name.match(/(\d+)/).pop());
 
 				VS.Util.copyObject(slot1.info, pSlot2.info);
 				VS.Util.copyObject(pSlot2.info, pSlotData.info);
@@ -375,8 +375,8 @@
 				slot1.info.item.slot = firstSlotNumber;
 				pSlot2.info.item.slot = secondSlotNumber;
 
-				let slot1GUI = slot1.overlays[0];
-				let slot2GUI = pSlot2.overlays[0];
+				const slot1GUI = slot1.overlays[0];
+				const slot2GUI = pSlot2.overlays[0];
 
 				slot1GUI.atlasName = VS.Type.getVariable(slot1.info.item.type, 'atlasName');
 				slot2GUI.atlasName = VS.Type.getVariable(pSlot2.info.item.type, 'atlasName');
@@ -566,15 +566,15 @@ Diob
 #END CLIENTCODE
 
 #BEGIN JAVASCRIPT
-(function() {
-	let engineWaitId = setInterval(function() {
+(() => {
+	const engineWaitId = setInterval(() => {
 		if (VS.World.global) {
 			clearInterval(engineWaitId);
 			buildServerInventory();
 		}
 	});
 
-	let buildServerInventory = function() {
+	const buildServerInventory = () => {
 		let aInventory = {};
 		if (VS.World.getCodeType() === 'local') {
 			if (VS.World.global.aInventory) {
@@ -589,7 +589,7 @@ Diob
 
 		aInventory.generateID = function(pID = 3) {
 			let ID = '';
-			let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+			const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
 			for (let i = 0; i < pID; i++) {
 				ID += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -628,7 +628,7 @@ Diob
 				var type = pItem.type;
 
 				// get the number of each slot that is currently occupied in this inventory
-				for (let item of Object.keys(pClient.mob.inventory)) {
+				for (const item of Object.keys(pClient.mob.inventory)) {
 					occupiedSlots.push(pClient.mob.inventory[item].slot);
 				}
 
@@ -640,7 +640,7 @@ Diob
 					}
 				}
 				// loop through the inventory and see if this item already exists
-				for (let item of Object.keys(pClient.mob.inventory)) {
+				for (const item of Object.keys(pClient.mob.inventory)) {
 					// if this item already exists in the inventory
 					if (pClient.mob.inventory[item].type === type) {
 						// if the item is stackable
@@ -681,7 +681,7 @@ Diob
 				// and if this inventory can hold more items
 				if (Object.keys(pClient.mob.inventory).length !== MAX_SLOTS) {
 					// this item does not exist in the inventory, therefore a new ID for it must be created
-					let inventoryItemID = this.generateID();
+					const inventoryItemID = this.generateID();
 					while (Object.keys(pClient.mob.inventory).includes(inventoryItemID)) {
 						inventoryItemID = this.generateID();
 					}
@@ -717,7 +717,7 @@ Diob
 
 		// a function to add an item to the map
 		aInventory.addItemToMap = function(pClient, pType, pX, pY, pMap, pQuantity) {
-			let item
+			let item;
 			if (VS.World.global.aRecycle) {
 				item = VS.World.global.aRecycle.isInCollection(pType, 1, VS.World.global.aRecycle.basicCollection, false, pX, pY, pMap, pQuantity);
 			} else {
@@ -762,7 +762,7 @@ Diob
 				if (pQuantity > 1) {
 					// you have enough in your inventory to drop this amount
 					if (pClient.mob.inventory[pSlotID].quantity >= pQuantity) {
-						let value = parseInt(pQuantity);
+						const value = parseInt(pQuantity);
 						quantity = Number.isInteger(value) ? value : 1;
 					} else {
 						// you do not have this much to drop, drop the max of this item (which means the entire item itself)
@@ -775,7 +775,7 @@ Diob
 		}
 
 		aInventory.getInventory = function(pClient) {
-			let copyOfInventory = {};
+			const copyOfInventory = {};
 			VS.Util.copyObject(copyOfInventory, pClient.mob.inventory);
 			return copyOfInventory;
 		}
@@ -787,8 +787,8 @@ Diob
 
 		// just moving slot data to and from slots
 		aInventory.swapSlotItems = function(pClient, pSlotID, pSlot2ID, pSlotNumber, pSlotNumber2) {
-			let slotNumber = parseInt(pSlotNumber);
-			let slotNumber2 = parseInt(pSlotNumber2);
+			const slotNumber = parseInt(pSlotNumber);
+			const slotNumber2 = parseInt(pSlotNumber2);
 			
 			if (!Number.isInteger(slotNumber) || !Number.isInteger(slotNumber2)) {
 				if (this.debugging) {
@@ -813,7 +813,7 @@ Diob
 			// if that id exists inside of this inventory
 			if (pClient.mob.inventory[pSlotID]) {
 				// checks if this new slot is already taken by another item in the inventory
-				for (let item of Object.keys(pClient.mob.inventory)) {
+				for (const item of Object.keys(pClient.mob.inventory)) {
 					// if this slot is already being used by another item in this inventory, this swap is invalid
 					if ((pClient.mob.inventory[item].slot !== pClient.mob.inventory[pSlotID].slot) && pClient.mob.inventory[item].slot === pSlotNumber) {
 						taken = true;
