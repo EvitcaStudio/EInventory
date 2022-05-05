@@ -459,9 +459,9 @@
 		// position the menu when the mouse moves
 		aInventory.positionInfoMenu = function() {
 			if (!this.busy) {
-				var mousePos = VS.Client.getMousePos();
-				var x;
-				var y;
+				const mousePos = VS.Client.getMousePos();
+				let x;
+				let y;
 				if (this.infoMenu.preventAutoScale) {
 					mousePos.x *= VS.Client._screenScale.x;
 					mousePos.y *= VS.Client._screenScale.y;
@@ -517,7 +517,7 @@ Interface
 			height = 50
 			interfaceType = 'WebBox'
 			parentElement = 'inventory_background'
-			var info = {
+			let info = {
 				// if a item in currently in this slot or not
 				'occupied': false,
 				// the item that this slot is currently holding
@@ -556,12 +556,12 @@ Interface
 			layer = 2
 
 Mob/Player
-	var c_inventory = {}
+	let c_inventory = {}
 
 Diob
 	GroundItem
-		var description = ''
-		var displayName = ''
+		let description = ''
+		let displayName = ''
 
 #END CLIENTCODE
 
@@ -607,25 +607,25 @@ Diob
 					return;
 				}
 				// what category this item belongs too
-				var category = pItem.category;
+				const category = pItem.category;
 				// if this item can represent more than one of itself
-				var stackable = pItem.stackable;
+				const stackable = pItem.stackable;
 				// the current amount of this item represented by this item
-				var quantity = pItem.quantity;
+				const quantity = pItem.quantity;
 				// the max amount of this item that can be represented
-				var maxQuantity = pItem.maxQuantity;
+				const maxQuantity = pItem.maxQuantity;
 				// if this item is equippable
-				var equippable = pItem.equippable;
+				const equippable = pItem.equippable;
 				// if this item was created by a player or something
-				var craftsman = pItem.craftsman;
+				const craftsman = pItem.craftsman;
 				// if this item requires a prompt to drop
-				var requiresPrompt = pItem.requiresPrompt;
+				const requiresPrompt = pItem.requiresPrompt;
 				// slots that are currently taken in this inventory
-				var occupiedSlots = [];
+				const occupiedSlots = [];
 				// the nearest open slot
-				var nearestOpenSlot;
+				let nearestOpenSlot;
 				// type of the item
-				var type = pItem.type;
+				const type = pItem.type;
 
 				// get the number of each slot that is currently occupied in this inventory
 				for (const item of Object.keys(pClient.mob.inventory)) {
@@ -651,7 +651,7 @@ Diob
 								if (quantity) {
 									// if the quantity you are picking up is more than the maxium quantity of the item you already have you must break it up and add it as a new item
 									if (pClient.mob.inventory[item].quantity + quantity > maxQuantity) {
-										var leftOverQuantity = (pClient.mob.inventory[item].quantity + quantity) - maxQuantity;
+										const leftOverQuantity = (pClient.mob.inventory[item].quantity + quantity) - maxQuantity;
 										pClient.mob.inventory[item].quantity = VS.Math.clamp(pClient.mob.inventory[item].quantity + quantity, pClient.mob.inventory[item].quantity, maxQuantity);
 										pClient.sendPacket(VS.World.global.aNetwork.C_AINVENTORY_PACKETS.C_ADD_ITEM_TO_SLOT_PACKET, [pItem.id, pClient.mob.inventory[item].slot, pClient.mob.inventory[item].ID, undefined, category, 1, pClient.mob.inventory[item].quantity]);
 										pItem.quantity = leftOverQuantity;
@@ -842,26 +842,26 @@ Diob
 #END JAVASCRIPT
 
 Mob/Player
-	var inventory = {}
+	let inventory = {}
 
 Diob
 	GroundItem
 		// what category this item belongs to
-		var category = '';
+		let category = '';
 		// if this item can represent more than one of itself
-		var stackable = false;
+		let stackable = false;
 		// the current amount of this item represented by this item
-		var quantity = 1;
+		let quantity = 1;
 		// the max amount of this item that can be represented
-		var maxQuantity = 1;
+		let maxQuantity = 1;
 		// if this item is equippable
-		var equippable = false;
+		let equippable = false;
 		// if this item was created by a player or something
-		var craftsman = '';
+		let craftsman = '';
 		// if this item is able to be collected
-		var obtainable = false
+		let obtainable = false
 		// if this item requires a prompt to be dropped, use this if the item is special and you don't want the item to be accidentatlly dropped.
-		var requiresPrompt = false
+		let requiresPrompt = false
 		mouseOpacity = 1
 		plane = 1
 		layer = 4
