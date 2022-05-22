@@ -2,39 +2,27 @@
 #BEGIN CLIENTCODE
 #BEGIN JAVASCRIPT
 (() => {
-/* 	let ticks = 0
-	const ticksBeforeAbort = 3000; // (1500 * 4) // 12 seconds. */
 	const engineWaitId = setInterval(() => {
-		if (VS.Client && VS.World.global && VS.Client.aInterfaceUtils && PIXI.filters) {
+		if (VS.Client && VS.Client.aInterfaceUtils && PIXI.filters) {
 			clearInterval(engineWaitId);
 			buildClientInventory();
-		}/*  else {
-			ticks++;
-			if (ticks >= ticksBeforeAbort) {
-				clearInterval(engineWaitId);
-				if (VS.Client) {
-					VS.Client.aMes('This library is dependent on the aInterfaceUtils library. This library has not been found.');
-				} else {
-					console.log('This library is dependent on the aInterfaceUtils library. This library has not been found.')
-				}
-			}
-		} */
+		}
 	});
 
 	const buildClientInventory = () => {
 		let aInventory = {};
 		if (VS.World.getCodeType() === 'local') {
-			if (VS.World.global.aInventory) {
-				aInventory = VS.World.global.aInventory;
+			if (VS.global.aInventory) {
+				aInventory = VS.global.aInventory;
 			}
 		}
 
 		VS.Client.aInventory = aInventory;
 		VS.Client.___EVITCA_aInventory = true;
-		VS.World.global.aInventory = aInventory;
+		VS.global.aInventory = aInventory;
 		
 		const GUI_TAG = '_gui';
-		const MAX_SLOTS = (VS.World.global.MAX_SLOTS ? VS.World.global.MAX_SLOTS : 20);
+		const MAX_SLOTS = (VS.global.MAX_SLOTS ? VS.global.MAX_SLOTS : 20);
 
 		// a reference to the old onConnect, if it exists // if this ever stops working, assign this BEFORE THE CLIENT IS CREATED
 		aInventory._onConnect = VS.Type.getFunction('Client', 'onConnect');
@@ -42,18 +30,14 @@
 		// the function that will be used as the `pClient.onConnect` function
 		const onConnect = function() {
 			// a reference to the information window that appears when hovering over an item
-			VS.World.global.aInventory.infoMenu = this.getInterfaceElement('aInventory_interface', 'infomenu');
-			if (VS.World.global.aInventory._onConnect) {
-				VS.World.global.aInventory._onConnect.apply(this);
+			VS.global.aInventory.infoMenu = this.getInterfaceElement('aInventory_interface', 'infomenu');
+			if (VS.global.aInventory._onConnect) {
+				VS.global.aInventory._onConnect.apply(this);
 			}
 		}
 
 		// assign the custom onConnect function to the client, this is called before `onConnect` is called so it can be assigned this way
 		VS.Type.setFunction('Client', 'onConnect', onConnect);
-
-		// create a outline filter that will be used to outline diobs that can be picked up
-		aInventory.outlineDefaultThickness = 3;
-		aInventory.outlineFilter = new PIXI.filters.OutlineFilter(aInventory.outlineDefaultThickness, 0xFF7F50, 0.1);
 
 		// a variable that tracks if the inventory is *busy* and cannot do any other request until it is finished
 		aInventory.busy = false;
@@ -227,8 +211,8 @@
 			const x = VS.Client.mob.xPos;
 			const y = VS.Client.mob.yPos;
 			const map = VS.Client.mob.mapName;
-			if (VS.World.global.aRecycle) {
-				item = VS.World.global.aRecycle.isInCollection(VS.Client.mob.c_inventory[pSlotID].type, 1, VS.World.global.aRecycle.basicCollection, false, x, y, map, pQuantity);
+			if (VS.global.aRecycle) {
+				item = VS.global.aRecycle.isInCollection(VS.Client.mob.c_inventory[pSlotID].type, 1, VS.global.aRecycle.basicCollection, false, x, y, map, pQuantity);
 			} else {
 				item = VS.newDiob(pType, x, y, map, pQuantity);
 			}
@@ -266,7 +250,7 @@
 								this.c_drop(pSlotData.ID, pQuantity);
 							} else {
 								// send packet to drop item. The server will remove the item from the inventory if the drop is legal and send a packet back to the client to do the same
-								VS.Client.sendPacket(VS.World.global.aNetwork.S_AINVENTORY_PACKETS.S_DROP_ITEM_PACKET, [pSlotData.ID, pQuantity]);
+								VS.Client.sendPacket(VS.global.aNetwork.S_AINVENTORY_PACKETS.S_DROP_ITEM_PACKET, [pSlotData.ID, pQuantity]);
 							}
 						} else {
 							this.busy = false;
@@ -279,16 +263,16 @@
 							const value = parseInt(pValue);
 							quantity = VS.Math.clamp(Number.isInteger(value) ? value : 1, 0, VS.Client.mob.c_inventory[pSlotData.ID].quantity);
 							if (quantity >= 1) {
-								VS.World.global.aInterfaceUtils.confirm('Drop <span style="text-decoration: underline; font-weight: bold;"> ' + quantity + ' </span> ' + VS.Type.getVariable(VS.Client.mob.c_inventory[pSlotData.ID].type, 'displayName') + '?', 'Are you sure?', confirmDropItem.bind(this), [pSlotData, quantity]);
+								VS.global.aInterfaceUtils.confirm('Drop <span style="text-decoration: underline; font-weight: bold;"> ' + quantity + ' </span> ' + VS.Type.getVariable(VS.Client.mob.c_inventory[pSlotData.ID].type, 'displayName') + '?', 'Are you sure?', confirmDropItem.bind(this), [pSlotData, quantity]);
 							} else {
 								this.busy = false;
 								this.c_restoreSlot(pSlotData);								
 							}
 						}
-						VS.World.global.aInterfaceUtils.input('How many would you like to drop?', 1, true, inputQuantity.bind(this), [pSlotData]);
+						VS.global.aInterfaceUtils.input('How many would you like to drop?', 1, true, inputQuantity.bind(this), [pSlotData]);
 						this.busy = true;
 					} else {
-						VS.World.global.aInterfaceUtils.confirm('Drop ' + VS.Type.getVariable(VS.Client.mob.c_inventory[pSlotData.ID].type, 'displayName') + '?', 'Are you sure?', confirmDropItem.bind(this), [pSlotData, VS.Client.mob.c_inventory[pSlotData.ID].quantity]);
+						VS.global.aInterfaceUtils.confirm('Drop ' + VS.Type.getVariable(VS.Client.mob.c_inventory[pSlotData.ID].type, 'displayName') + '?', 'Are you sure?', confirmDropItem.bind(this), [pSlotData, VS.Client.mob.c_inventory[pSlotData.ID].quantity]);
 						this.busy = true;
 					}
 				} else {
@@ -308,14 +292,14 @@
 									this.c_drop(pSlotData.ID, quantity);
 								} else {
 									// if the item does not require a prompt, send a packet to drop the item. The server will remove the item from the inventory if the drop is legal and send a packet back to the client to do the same
-									VS.Client.sendPacket(VS.World.global.aNetwork.S_AINVENTORY_PACKETS.S_DROP_ITEM_PACKET, [pSlotData.ID, quantity]);
+									VS.Client.sendPacket(VS.global.aNetwork.S_AINVENTORY_PACKETS.S_DROP_ITEM_PACKET, [pSlotData.ID, quantity]);
 								}
 							} else {
 								this.busy = false;
 								this.c_restoreSlot(pSlotData);
 							}
 						}
-						VS.World.global.aInterfaceUtils.input('How many would you like to drop?', 1, true, inputQuantity.bind(this), [pSlotData]);
+						VS.global.aInterfaceUtils.input('How many would you like to drop?', 1, true, inputQuantity.bind(this), [pSlotData]);
 						this.busy = true;
 					} else {
 						// separate code to be ran if this isn't a multiplayer game
@@ -323,7 +307,7 @@
 							this.c_drop(pSlotData.ID);
 						} else {
 							// if the item does not require a prompt, send a packet to drop the item. The server will remove the item from the inventory if the drop is legal and send a packet back to the client to do the same
-							VS.Client.sendPacket(VS.World.global.aNetwork.S_AINVENTORY_PACKETS.S_DROP_ITEM_PACKET, [pSlotData.ID]);
+							VS.Client.sendPacket(VS.global.aNetwork.S_AINVENTORY_PACKETS.S_DROP_ITEM_PACKET, [pSlotData.ID]);
 						}
 					}
 				}
@@ -344,7 +328,7 @@
 			this.hideInfoMenu();
 			VS.Client.mob.c_inventory = {};
 			if (VS.World.getPlayerMode() !== 1) {
-				VS.Client.sendPacket(VS.World.global.aNetwork.S_AINVENTORY_PACKETS.S_WIPE_INVENTORY_PACKET);
+				VS.Client.sendPacket(VS.global.aNetwork.S_AINVENTORY_PACKETS.S_WIPE_INVENTORY_PACKET);
 			}
 		}
 
@@ -400,7 +384,7 @@
 				aInventory.showInfoMenu(pSlot2);
 				VS.Client.setMouseCursor('pointer');
 				if (VS.World.getPlayerMode() !== 1) {
-					VS.Client.sendPacket(VS.World.global.aNetwork.S_AINVENTORY_PACKETS.S_SWAP_SLOT_ITEMS_PACKET, [slot1.info.item.ID, pSlot2.info.item.ID, firstSlotNumber, secondSlotNumber]);
+					VS.Client.sendPacket(VS.global.aNetwork.S_AINVENTORY_PACKETS.S_SWAP_SLOT_ITEMS_PACKET, [slot1.info.item.ID, pSlot2.info.item.ID, firstSlotNumber, secondSlotNumber]);
 				}
 			}
 		}
@@ -433,7 +417,7 @@
 				aInventory.showInfoMenu(pSlot2);
 				VS.Client.setMouseCursor('pointer');
 				if (VS.World.getPlayerMode() !== 1) {
-					VS.Client.sendPacket(VS.World.global.aNetwork.S_AINVENTORY_PACKETS.S_MOVE_SLOT_ITEM_PACKET, [pSlot2.info.item.ID, pSlot2.info.item.slot]);
+					VS.Client.sendPacket(VS.global.aNetwork.S_AINVENTORY_PACKETS.S_MOVE_SLOT_ITEM_PACKET, [pSlot2.info.item.ID, pSlot2.info.item.slot]);
 				}
 			}
 		}
@@ -468,10 +452,10 @@
 				}
 
 				x = mousePos.x;
-				y = mousePos.y - VS.World.global.aInventory.infoMenu.height;
+				y = mousePos.y - VS.global.aInventory.infoMenu.height;
 
-				if (x + VS.World.global.aInventory.infoMenu.width > VS.Client._windowSize.width) {
-					x = mousePos.x - VS.World.global.aInventory.infoMenu.width;
+				if (x + VS.global.aInventory.infoMenu.width > VS.Client._windowSize.width) {
+					x = mousePos.x - VS.global.aInventory.infoMenu.width;
 				}
 
 				if (y < 0) {
@@ -568,7 +552,7 @@ Diob
 #BEGIN JAVASCRIPT
 (() => {
 	const engineWaitId = setInterval(() => {
-		if (VS.World.global) {
+		if (VS.global) {
 			clearInterval(engineWaitId);
 			buildServerInventory();
 		}
@@ -577,15 +561,15 @@ Diob
 	const buildServerInventory = () => {
 		let aInventory = {};
 		if (VS.World.getCodeType() === 'local') {
-			if (VS.World.global.aInventory) {
-				aInventory = VS.World.global.aInventory;
+			if (VS.global.aInventory) {
+				aInventory = VS.global.aInventory;
 			}
 		}
 
-		VS.World.global.aInventory = aInventory;
+		VS.global.aInventory = aInventory;
 		
-		const MAX_SLOTS = parseInt((VS.World.global.MAX_SLOTS ? VS.World.global.MAX_SLOTS : 20));
-		const REACHING_RANGE = parseInt((VS.World.global.REACHING_RANGE ? VS.World.global.REACHING_RANGE : 48));
+		const MAX_SLOTS = parseInt((VS.global.MAX_SLOTS ? VS.global.MAX_SLOTS : 20));
+		const REACHING_RANGE = parseInt((VS.global.REACHING_RANGE ? VS.global.REACHING_RANGE : 48));
 
 		aInventory.generateID = function(pID = 3) {
 			let ID = '';
@@ -653,7 +637,7 @@ Diob
 									if (pClient.mob.inventory[item].quantity + quantity > maxQuantity) {
 										const leftOverQuantity = (pClient.mob.inventory[item].quantity + quantity) - maxQuantity;
 										pClient.mob.inventory[item].quantity = VS.Math.clamp(pClient.mob.inventory[item].quantity + quantity, pClient.mob.inventory[item].quantity, maxQuantity);
-										pClient.sendPacket(VS.World.global.aNetwork.C_AINVENTORY_PACKETS.C_ADD_ITEM_TO_SLOT_PACKET, [pItem.id, pClient.mob.inventory[item].slot, pClient.mob.inventory[item].ID, undefined, category, 1, pClient.mob.inventory[item].quantity]);
+										pClient.sendPacket(VS.global.aNetwork.C_AINVENTORY_PACKETS.C_ADD_ITEM_TO_SLOT_PACKET, [pItem.id, pClient.mob.inventory[item].slot, pClient.mob.inventory[item].ID, undefined, category, 1, pClient.mob.inventory[item].quantity]);
 										pItem.quantity = leftOverQuantity;
 										// we allowed items to bypass the MAX_SLOTS if they are stackable, since those are not technically items. If you have max slots, then you cannot add the remainder of this item so return out.
 										if (Object.keys(pClient.mob.inventory).length === MAX_SLOTS) {
@@ -667,7 +651,7 @@ Diob
 									// if you can pick up the full amount of this item, then delete this item
 									} else {
 										pClient.mob.inventory[item].quantity = VS.Math.clamp(pClient.mob.inventory[item].quantity + quantity, pClient.mob.inventory[item].quantity, maxQuantity);
-										pClient.sendPacket(VS.World.global.aNetwork.C_AINVENTORY_PACKETS.C_ADD_ITEM_TO_SLOT_PACKET, [pItem.id, pClient.mob.inventory[item].slot, pClient.mob.inventory[item].ID, undefined, category, 1, pClient.mob.inventory[item].quantity]);
+										pClient.sendPacket(VS.global.aNetwork.C_AINVENTORY_PACKETS.C_ADD_ITEM_TO_SLOT_PACKET, [pItem.id, pClient.mob.inventory[item].slot, pClient.mob.inventory[item].ID, undefined, category, 1, pClient.mob.inventory[item].quantity]);
 										this.removeItemFromMap(pItem);
 									}
 									return;
@@ -711,15 +695,15 @@ Diob
 				'ID': pID,
 				'type': pType
 			}
-			pClient.sendPacket(VS.World.global.aNetwork.C_AINVENTORY_PACKETS.C_ADD_ITEM_TO_SLOT_PACKET, [pItem.id, pSlot, pID, pRequiresPrompt, pCategory, pStackable, pQuantity, pEquippable, pCraftsman]);
+			pClient.sendPacket(VS.global.aNetwork.C_AINVENTORY_PACKETS.C_ADD_ITEM_TO_SLOT_PACKET, [pItem.id, pSlot, pID, pRequiresPrompt, pCategory, pStackable, pQuantity, pEquippable, pCraftsman]);
 			this.removeItemFromMap(pItem);
 		}
 
 		// a function to add an item to the map
 		aInventory.addItemToMap = function(pClient, pType, pX, pY, pMap, pQuantity) {
 			let item;
-			if (VS.World.global.aRecycle) {
-				item = VS.World.global.aRecycle.isInCollection(pType, 1, VS.World.global.aRecycle.basicCollection, false, pX, pY, pMap, pQuantity);
+			if (VS.global.aRecycle) {
+				item = VS.global.aRecycle.isInCollection(pType, 1, VS.global.aRecycle.basicCollection, false, pX, pY, pMap, pQuantity);
 			} else {
 				item = VS.newDiob(pType, pX, pY, pMap, pQuantity);
 			}
@@ -733,8 +717,8 @@ Diob
 			if (pItem.onPickup && typeof(pItem.onPickup) === 'function') {
 				pItem.onPickup();
 			}
-			if (VS.World.global.aRecycle) {
-				VS.World.global.aRecycle.collect(pItem, VS.World.global.aRecycle.basicCollection);
+			if (VS.global.aRecycle) {
+				VS.global.aRecycle.collect(pItem, VS.global.aRecycle.basicCollection);
 			} else {
 				VS.delDiob(pItem);
 			}
@@ -748,7 +732,7 @@ Diob
 			} else {
 				pClient.mob.inventory[pSlotID].quantity -= pQuantity;
 			}
-			pClient.sendPacket(VS.World.global.aNetwork.C_AINVENTORY_PACKETS.C_REMOVE_ITEM_FROM_SLOT_PACKET, [pSlotID, pQuantity])
+			pClient.sendPacket(VS.global.aNetwork.C_AINVENTORY_PACKETS.C_REMOVE_ITEM_FROM_SLOT_PACKET, [pSlotID, pQuantity])
 		}
 
 		aInventory.updateSlotItem = function(pClient, pSlotID) {
