@@ -17,8 +17,6 @@
 		const SLOT_OVERLAY_TYPE = 'SlotGUI';
 		const MAX_SLOTS = (VS.global.MAX_SLOTS ? VS.global.MAX_SLOTS : 20);
 
-		// a reference to the information window that appears when hovering over an item
-		aInventory.infoMenu = VS.Client.getInterfaceElement('aInventory_interface', 'infomenu');
 		// a variable that tracks if the inventory is *busy* and cannot do any other request until it is finished
 		aInventory.busy = false;
 
@@ -499,6 +497,8 @@
 
 		// show a information menu for the item that is in this slot
 		aInventory.c_showInfoMenu = function(pSlot) {
+			// a reference to the information window that appears when hovering over an item
+			this.infoMenu = VS.Client.getInterfaceElement('aInventory_interface', 'infomenu');
 			if (this.infoMenu) {
 				if (!this.busy) {
 					if (this.infoMenu.isHidden) {
