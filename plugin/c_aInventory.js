@@ -88,8 +88,10 @@
 			},
 			onMouseMove: function(pClient, pX, pY) {
 				if (!VS.global.aInventory.grabbing && !VS.global.aInventory.isHoldingSlot) {
-					if (!VS.global.aInventory.infoMenu.isHidden) {
-						VS.global.aInventory.c_positionInfoMenu();
+					if (VS.global.aInventory.infoMenu) {
+						if (!VS.global.aInventory.infoMenu.isHidden) {
+							VS.global.aInventory.c_positionInfoMenu();
+						}
 					}
 				}
 			},
