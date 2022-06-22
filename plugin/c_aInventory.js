@@ -380,11 +380,14 @@
 					if (!this.isEligibleType(pItem.type)) {
 						return false;
 					}
-					// Things that can be stacked have a quantity variable. If there is no quantity set then this is not a stackable item
-					// If the inventory is full, and you pick up a item that is stackable, it will still check if it can be added to another stack instead of returning out.
-					if (this.isMaxed() && !pItem.quantity) {
-						console.error('aInventory: %cpNo available slots', 'font-weight: bold');
-						return false;
+					// If this code is ran in a multiplayer envrionment it does not need to check for `quantity` . It will be checked server side, as its a server side variable
+					if (VS.World.getCodeType() === 'local') {
+						// Things that can be stacked have a quantity variable. If there is no quantity set then this is not a stackable item
+						// If the inventory is full, and you pick up a item that is stackable, it will still check if it can be added to another stack instead of returning out.
+						if (this.isMaxed() && !pItem.quantity) {
+							console.error('aInventory: %cpNo available slots', 'font-weight: bold');
+							return false;
+						}
 					}
 					if (VS.Map.getDist(VS.Client.mob, pItem) > this.getMaxDistance()) {
 						console.error('aInventory: This item(' + pItem.id + ') is out of range.');
@@ -476,7 +479,7 @@
 							// If this slot is not full and it isn't a full stack of items being added
 							if (slotQuantity !== maxQuantity && pItem.quantity !== maxQuantity) {
 								if (slotQuantity + quantity > maxQuantity) {
-									const leftOverQuantity = (slotQuantity + quantity) - maxQuantity;
+									const leftOverQuantity = Math.max((slotQuantity + quantity) - maxQuantity, 1);
 									this._slots[slot]._item.quantity = clamp(slotQuantity + quantity, slotQuantity, maxQuantity);
 									if (itemInfo) {
 										this._slots[slot]._item.itemInfo = itemInfo;
