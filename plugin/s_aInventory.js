@@ -377,7 +377,7 @@
 						// If this slot is not full and it isn't a full stack of items being added
 						if (slotQuantity !== maxQuantity && pItem.quantity !== maxQuantity) {
 							if (slotQuantity + quantity > maxQuantity) {
-								const leftOverQuantity = (slotQuantity + quantity) - maxQuantity;
+								const leftOverQuantity = Math.max((slotQuantity + quantity) - maxQuantity, 1);
 								this._slots[slot]._item.quantity = clamp(slotQuantity + quantity, slotQuantity, maxQuantity);
 								formattedItemData[1] = this._slots[slot]._item.quantity;
 								if (itemInfo) {
