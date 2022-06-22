@@ -10,6 +10,19 @@
 		const aInventory = {};
 		VS.Client.___EVITCA_aInventory = true;
 		VS.Client.aInventory = aInventory;
+		VS.Client.addWebStyle('aInventory_input', '.aInventory_modal{display:none;position:fixed;font-family:Arial;z-index:999999;padding-top:100px;left:0;top:0;width:100%;height:100%;overflow:auto;background-color:rgb(0,0,0);background-color:rgba(0,0,0,.4);user-select:none}.aInventory_modalContent{background-color:#fefefe;margin:auto;padding:20px;border:1px solid #888;border-radius:20px;width:15%}.aInventory_modalInput{width:100%}.aInventory_modalClose{color:#aaa;float:right;font-size:28px;font-weight:700}.aInventory_modalClose:hover,.aInventory_modalClose:focus{color:#000;text-decoration:none;cursor:pointer}.aInventory_animateZoom{animation:aInventory_animatezoom 0.3s}@keyframes aInventory_animatezoom{from{transform:scale(0)}to{transform:scale(1)}}');
+		VS.Client.createInterface('aInterface_input_interface');
+		const interface = VS.newDiob('Interface');
+		const WINDOW_SIZE = VS.Client.getWindowSize();
+		interface.interfaceType = 'WebBox';
+		interface.width = WINDOW_SIZE.width;
+		interface.height = WINDOW_SIZE.height;
+		interface.mouseOpacity = 0;
+		interface.touchOpacity = 0;
+		interface.preventAutoScale = true;
+		VS.Client.addInterfaceElement(interface, 'aInterface_input_interface', 'aInterface_input', 0, 0);
+		interface.text = '<div class=aInventory_modal id=aInventory_modal><div class="aInventory_animateZoom aInventory_modalContent"><span class=aInventory_modalClose id=aInventory_modalClose>×</span><p id=aInventory_modalTitleContent>Drop how many?<form><div><input class=aInventory_modalInput id=aInventory_modalInput placeholder=1 type=number value=1><p><button id=aInventory_submit type=button>Ok</button></div></form></div></div>';
+		VS.Client.showInterface('aInterface_input_interface');
 		VS.global.aInventory = aInventory;
 
 		/**
@@ -408,6 +421,7 @@
 				if (!this.isLocked()) {
 					this._slots[pSlotNumber].refresh();
 				}
+				this._activeSlotNumber = null;
 			}
 			/**
 			 * pItemData: An object holding all information about the item being added to the inventory.
@@ -589,8 +603,8 @@
 
 						// If the item you are relinquishing has a quantity it means it is stackable and has the ability to have more than one of itself. If there is more than one of them, then you need to decide how many to relinquish.
 						if (currentQuantity > ONE) {
-							aInventory.input('Amount to drop?', ONE, function(pDropAmount) {
-								const value = parseInt(pDropAmount);
+							aInventory.input.call(this, 'Amount to drop?', function(pDropAmount) {
+								const value = parseInt(pDropAmount, 10);
 								quantityToDrop = clamp(Number.isInteger(value) ? value : ONE, ZERO, currentQuantity);
 								if (quantityToDrop >= ONE) {
 									this.unlock();
@@ -603,10 +617,11 @@
 									this.unlock();
 									this.restoreSlot(pSlotNumber);
 								}
-							}.bind(this), [pSlotNumber]);
+							}.bind(this));
 							this.lock();
+							this._activeSlotNumber = pSlotNumber;
 						} else {
-							this.relinquish(pSlotNumber);
+							this.relinquish(pSlotNumber, currentQuantity);
 						}
 					} else {
 						console.error('aInventory: No item in slot(' + pSlotNumber + ')');
@@ -693,6 +708,56 @@
 			}
 			VS.Client[pVariable] = this.createInventory(settings);
 
+		}
+		/**
+		 * pTitle: The title to use for the input modal
+		 * pCallback: The callback to use for the modal when the quantity is used
+		 * desc: An input menu that is shown so a user can input a qunatity
+		 */
+		aInventory.input = function(pTitle = 'Drop how many?', pCallback) {
+			const modal = document.getElementById('aInventory_modal');
+			const modalInput = document.getElementById('aInventory_modalInput');
+			const modalCloseButton = document.getElementById('aInventory_modalClose');
+			const modalSubmitButton = document.getElementById('aInventory_submit');
+			const modalTitle = document.getElementById('aInventory_modalTitleContent');
+
+			if (!modal.initialized) {
+				modal.show = function() {
+					this.style.display = 'block';
+				}
+				modal.hide = function() {
+					this.style.display = 'none';
+					this.inventory.unlock();
+					this.inventory.restoreSlot(this.inventory._activeSlotNumber);
+					this.inventory = null;
+					modalInput.value = 1;
+				}
+				modal.close = function() {
+					if (typeof(this.callback) === 'function') {
+						this.callback(parseInt(modalInput.value, 10));
+					}
+					this.callback = null;
+					modalInput.value = 1;
+				}
+				modalSubmitButton.addEventListener('click', function(pEvent) {
+					modal.close();
+					modal.style.display = 'none';
+				});
+				modalCloseButton.addEventListener('click', function(pEvent) {
+					modal.hide();
+				});
+				window.addEventListener('click', function(pEvent) {
+					if (pEvent.target === modal) {
+						modal.hide();
+					}
+				});
+				modal.initialized = true;
+			}
+	
+			modalTitle.textContent = pTitle;
+			modal.callback = pCallback;
+			modal.inventory = this;
+			modal.show();
 		}
 		/**
 		 * pSettings: Object holding the settings for this inventory
