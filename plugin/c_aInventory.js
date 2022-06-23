@@ -486,11 +486,6 @@
 									}
 									this._slots[slot].refresh();
 									pItem.quantity = leftOverQuantity;
-									// We allow items to bypass the max slots if they have a quantity, since those are not technically items. If you have all your slots filled then you cannot add the remainder of this item so return out.
-									if (this.isMaxed()) {
-										console.error('aInventory: %cpNo available slots', 'font-weight: bold');
-										return;
-									}
 									// If you have more space in the inventory, add the remaining stack as a new item
 									this.addItem(pItem);
 									return;
