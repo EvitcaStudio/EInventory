@@ -375,7 +375,7 @@
 						// Checks the instance's maxQuantity first, then the types variable, then the static variable, then if nothing is found it uses the default value
 						const maxQuantity = pItem.maxQuantity ? pItem.maxQuantity : VS.Type.getVariable(type, 'maxQuantity') ? VS.Type.getVariable(type, 'maxQuantity') : VS.Type.getStaticVariable(type, 'maxQuantity') ? VS.Type.getStaticVariable(type, 'maxQuantity') : DEFAULT_MAX_QUANTITY;
 						// If this slot is not full and it isn't a full stack of items being added
-						if (slotQuantity !== maxQuantity && pItem.quantity !== maxQuantity) {
+						if (slotQuantity !== maxQuantity) {
 							if (slotQuantity + quantity > maxQuantity) {
 								const leftOverQuantity = Math.max((slotQuantity + quantity) - maxQuantity, 1);
 								this._slots[slot]._item.quantity = clamp(slotQuantity + quantity, slotQuantity, maxQuantity);
