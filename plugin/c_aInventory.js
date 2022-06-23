@@ -21,7 +21,7 @@
 		interface.touchOpacity = 0;
 		interface.preventAutoScale = true;
 		VS.Client.addInterfaceElement(interface, 'aInterface_input_interface', 'aInterface_input', 0, 0);
-		interface.text = '<div class=aInventory_modal id=aInventory_modal><div class="aInventory_animateZoom aInventory_modalContent"><span class=aInventory_modalClose id=aInventory_modalClose>×</span><p id=aInventory_modalTitleContent>Drop how many?<form><div><input class=aInventory_modalInput id=aInventory_modalInput placeholder=1 type=number value=1><p><button id=aInventory_submit type=button>Ok</button></div></form></div></div>';
+		interface.text = '<div class=aInventory_modal id=aInventory_modal><div class="aInventory_animateZoom aInventory_modalContent"><span class=aInventory_modalClose id=aInventory_modalClose>×</span><p id=aInventory_modalTitleContent>Drop how many?<form><div><input class=aInventory_modalInput id=aInventory_modalInput min="0" placeholder="1" type=number value=1><p><button id=aInventory_submit type=button>Ok</button></div></form></div></div>';
 		VS.Client.showInterface('aInterface_input_interface');
 		VS.global.aInventory = aInventory;
 
