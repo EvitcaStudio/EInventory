@@ -604,6 +604,11 @@
 							aInventory.input.call(this, 'Amount to drop?', function(pDropAmount) {
 								const value = parseInt(pDropAmount, 10);
 								quantityToDrop = clamp(Number.isInteger(value) ? value : ONE, ZERO, currentQuantity);
+								if (!quantityToDrop) {
+									this.unlock();
+									this.restoreSlot(pSlotNumber);
+									return;									
+								}
 								if (quantityToDrop >= ONE) {
 									this.unlock();
 									// If you remove this amount of items from the stack and there is still some left, then restore this item to the inventory
