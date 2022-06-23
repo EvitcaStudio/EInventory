@@ -604,7 +604,7 @@
 							aInventory.input.call(this, 'Amount to drop?', function(pDropAmount) {
 								const value = parseInt(pDropAmount, 10);
 								quantityToDrop = clamp(Number.isInteger(value) ? value : ONE, ZERO, currentQuantity);
-								if (!quantityToDrop) {
+								if (!quantityToDrop && currentQuantity) {
 									this.unlock();
 									this.restoreSlot(pSlotNumber);
 									return;									

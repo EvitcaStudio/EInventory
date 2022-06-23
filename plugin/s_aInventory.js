@@ -443,7 +443,7 @@
 			// Clamp the amount to drop down to what you have available to drop to prevent duplicate item bugs
 			pQuantity = clamp(pQuantity, !quantity ? ZERO : ONE, quantity);
 			const quantityToDrop = clamp(!quantity ? ZERO : pQuantity, !quantity ? ZERO : ONE, quantity);
-			if (!quantityToDrop) {
+			if (!quantityToDrop && quantity) {
 				return;
 			}
 			const type = this._slots[pSlotNumber].getItemType();
