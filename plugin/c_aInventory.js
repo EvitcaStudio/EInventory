@@ -601,6 +601,8 @@
 
 						// If the item you are relinquishing has a quantity it means it is stackable and has the ability to have more than one of itself. If there is more than one of them, then you need to decide how many to relinquish.
 						if (currentQuantity > ONE) {
+							this.lock();
+							this._activeSlotNumber = pSlotNumber;
 							aInventory.input.call(this, 'Amount to drop?', function(pDropAmount) {
 								const value = parseInt(pDropAmount, 10);
 								quantityToDrop = clamp(Number.isInteger(value) ? value : ONE, ZERO, currentQuantity);
@@ -621,8 +623,6 @@
 									this.restoreSlot(pSlotNumber);
 								}
 							}.bind(this));
-							this.lock();
-							this._activeSlotNumber = pSlotNumber;
 						} else {
 							this.relinquish(pSlotNumber, currentQuantity);
 						}
@@ -760,6 +760,7 @@
 			modalTitle.textContent = pTitle;
 			modal.callback = pCallback;
 			modal.inventory = this;
+			modalInput.setAttribute('max', modal.inventory._slots[modal.inventory._activeSlotNumber].getItemQuantity());
 			modal.show();
 		}
 		/**
