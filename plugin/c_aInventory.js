@@ -10,6 +10,7 @@
 		const aInventory = {};
 		VS.Client.___EVITCA_aInventory = true;
 		VS.Client.aInventory = aInventory;
+		window.aInventory = aInventory;
 		VS.Client.addWebStyle('aInventory_input', '.aInventory_modal{display:none;position:fixed;font-family:Arial;z-index:999999;padding-top:100px;left:0;top:0;width:100%;height:100%;overflow:auto;background-color:rgb(0,0,0);background-color:rgba(0,0,0,.4);user-select:none}.aInventory_modalContent{background-color:#fefefe;margin:auto;padding:20px;border:1px solid #888;border-radius:20px;width:15%}.aInventory_modalInput{width:100%}.aInventory_modalClose{color:#aaa;float:right;font-size:28px;font-weight:700}.aInventory_modalClose:hover,.aInventory_modalClose:focus{color:#000;text-decoration:none;cursor:pointer}.aInventory_animateZoom{animation:aInventory_animatezoom 0.3s}@keyframes aInventory_animatezoom{from{transform:scale(0)}to{transform:scale(1)}}');
 		VS.Client.createInterface('aInterface_input_interface');
 		const interface = VS.newDiob('Interface');

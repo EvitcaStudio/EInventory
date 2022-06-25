@@ -1,6 +1,7 @@
 (() => {
 	const aInventory = {};
 	VS.global.aInventory = aInventory;
+	global.aInventory = aInventory;
 
 	/**
 	 * desc: An object full of stored slot types. This is used to reference diob types in mouse events
