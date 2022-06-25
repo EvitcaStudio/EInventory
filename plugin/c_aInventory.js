@@ -34,6 +34,27 @@
 		 */
 		aInventory.storedInventories = {};
 
+		/**
+		 * pSlotElement: The element that will have this overlay placed on it
+		 * desc: Add this overlay to pSlotElement
+		 */
+		aInventory.highlightSlot = function(pSlotElement) {
+			if (this.slotHighlight) {
+				if (!pSlotElement.getOverlays().includes(this.slotHighlight)) {
+					pSlotElement.addOverlay(this.slotHighlight);
+				}
+			}
+		}
+		/**
+		 * pSlotElement: The element that will have this overlay placed on it
+		 * desc: Remove the overlay from pSlotElement
+		 */
+		aInventory.unhighlightSlot = function(pSlotElement) {
+			if (pSlotElement.getOverlays().includes(this.slotHighlight)) {
+				pSlotElement.removeOverlay(this.slotHighlight, true);
+			}
+		}
+
 		const ZERO = 0;
 		const ONE = 1;		
 		const DEFAULT_MAX_QUANTITY = 1;
@@ -820,6 +841,20 @@
 				if (pSettings.id) {
 					this.storedInventories[pSettings.id] = inventory;
 				}
+				
+				const slotWidth = VS.Type.getVariable(pSettings.slotType, 'width');
+				const slotHeight = VS.Type.getVariable(pSettings.slotType, 'height');
+
+				this.slotHighlight = VS.newDiob('Overlay');
+				this.slotHighlight.width = slotWidth;
+				this.slotHighlight.height = slotHeight;
+				this.slotHighlight.preventAutoScale = true;
+				this.slotHighlight.mouseOpacity = 0;
+				this.slotHighlight.touchOpacity = 0;
+				this.slotHighlight.atlasName = '';
+				this.slotHighlight.iconName = '';
+				this.slotHighlight.alpha = 0.1;
+				this.slotHighlight.color = { 'tint': 0xFFFFFF };
 				return inventory;
 			} else {
 				console.warn('aInventory: Invalid type passed for pSettings');
