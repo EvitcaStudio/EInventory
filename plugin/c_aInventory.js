@@ -367,9 +367,9 @@
 			 * desc: This will cause a network event to be called so a developer can call the proper packets and send the authenticate packet to the server.
 			 * The packet will only be sent if the id is a valid id of a diob
 			 */
-			static authenticateRequest(pInventoryID, pItemID) {
+			static authenticateItemRequest(pInventoryID, pItemID) {
 				if (typeof(VS.Client.onNetwork) === 'function') {
-					VS.Client.onNetwork('aInventory', 'authenticateRequest', [[pInventoryID, pItemID]]);
+					VS.Client.onNetwork('aInventory', 'authenticateItemRequest', [[pInventoryID, pItemID]]);
 				}
 			}
 			/**
@@ -435,7 +435,7 @@
 				if (pItem && VS.World.getDiobByID(pItem.id)) {
 					if (VS.World.getCodeType() === 'client') {
 						if (this.isEligibleItem(pItem)) {
-							Inventory.authenticateRequest(this.getID(), pItem.id);
+							Inventory.authenticateItemRequest(this.getID(), pItem.id);
 						}
 					} else {
 						if (this.isEligibleItem(pItem)) {

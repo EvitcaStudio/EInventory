@@ -288,7 +288,7 @@
 		 * pItemID: The id of the diob you want to autheticate server side
 		 * desc: This will autheticate the item and see if its a valid item and it will pick it up if it is
 		 */
-		authenticateRequest(pItemID) {
+		authenticateItemRequest(pItemID) {
 			this.obtain(pItemID);
 		}
 		/**
