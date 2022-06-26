@@ -578,6 +578,8 @@
 					console.warn('aInventory: This inventory is currently locked. Unlock it to remove this item');
 					return;
 				}
+				// If there is no quantity to drop, then do nothing
+				if (!pQuantity) return;
 				if (this.getSlot(pSlotNumber)) {
 					if (this.getSlot(pSlotNumber).hasItem()) {
 						const quantity = this.getSlot(pSlotNumber).getItemQuantity();
