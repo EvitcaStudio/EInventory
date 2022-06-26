@@ -445,6 +445,7 @@
 		 * desc: This will drop the item inside of this slot number
 		 */
 		relinquish(pSlotNumber, pQuantity) {
+			if (!pQuantity) return;
 			const itemInfo = this.getSlot(pSlotNumber).getItemInfo();
 			const quantity = this.getSlot(pSlotNumber).getItemQuantity();
 			// Clamp the amount to drop down to what you have available to drop to prevent duplicate item bugs
