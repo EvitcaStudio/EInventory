@@ -447,8 +447,10 @@
 		relinquish(pSlotNumber, pQuantity) {
 			const itemInfo = this.getSlot(pSlotNumber).getItemInfo();
 			const quantity = this.getSlot(pSlotNumber).getItemQuantity();
+			// Under this condition this means that the user does not want to drop anything, the item has a stack but they inputted 0
+			if (quantity & !pQuantity) return;
 			// Clamp the amount to drop down to what you have available to drop to prevent duplicate item bugs
-			pQuantity = clamp(pQuantity, (!quantity || quantity & !pQuantity) ? ZERO : ONE, quantity);
+			pQuantity = clamp(pQuantity, !quantity ? ZERO : ONE, quantity);
 			const quantityToDrop = clamp(!quantity ? ZERO : pQuantity, !quantity ? ZERO : ONE, quantity);
 			if (!quantityToDrop && quantity) {
 				return;
