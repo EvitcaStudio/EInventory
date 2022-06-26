@@ -550,11 +550,12 @@
 				Inventory.removeItemFromMap(pItem);
 			}
 			/**
-			 * pSlotNumber: Relinguish the data in this slot
-			 * pQuantity: The amount to relinquish
+			 * pSlotNumber: The slot number to remove the item from
+			 * pQuantity: The amount to remove from this slot
 			 * desc: This will update the slots quantity with the new quantity after you remove pQuantity's amount
+			 * INTERNAL API
 			 */
-			updateSlotQuantity(pSlotNumber, pQuantity) {
+			discardQuantity(pSlotNumber, pQuantity) {
 				// Get the amount of stacked items you have
 				const quantity = this.getSlot(pSlotNumber).getItemQuantity();
 				// If there is no stored quantity in this slot, and there was no passed quantity to drop then the slot needs to be wiped since it was only one item
@@ -568,12 +569,38 @@
 				this.getSlot(pSlotNumber).refresh();
 			}
 			/**
-			 * pSlotNumber: Relinguish the data in this slot
-			 * pQuantity: The amount to relinquish
+			 * pSlotNumber: The slot number to remove the item from
+			 * pQuantity: The amount to remove from this slot
+			 * desc: This will send a packet to the server to remove pQuantity amount from the item in this slot
+			 * CALLABLE API
+			 */
+			removeQuantity(pSlotNumber, pQuantity) {
+				// If this slot has a quantity to begin with
+				if (this.getSlot(pSlotNumber).getItemQuantity()) {
+					if (VS.World.getCodeType() === 'local') {
+						this.discardQuantity(pSlotNumber, pQuantity);
+					} else {
+						if (typeof(VS.Client.onNetwork) === 'function') {
+							VS.Client.onNetwork('aInventory', 'removeQuantity', [[this.getID(), pSlotNumber, pQuantity]]);
+						}
+					}
+				}
+			}
+			/**
+			 * pSlotNumber: The slot number to remove the item from
+			 * pQuantity: The amount to remove from this slot
+			 * desc: This will send a packet to the server to remove pQuantity amount from the item in this slot
+			 */
+			removeQuantityFromServer(pSlotNumber, pQuantity) {
+				this.discardQuantity(pSlotNumber, pQuantity);
+			}
+			/**
+			 * pSlotNumber: The slot number to remove the item from
+			 * pQuantity: The amount to remove
 			 * desc: This will drop the item inside of this slot number
 			 * CALLABLE API
 			 */
-			relinquish(pSlotNumber, pQuantity) {
+			removeItem(pSlotNumber, pQuantity) {
 				if (this.isLocked()) {
 					console.warn('aInventory: This inventory is currently locked. Unlock it to remove this item');
 					return;
@@ -594,11 +621,11 @@
 							if (!dissapearOnDrop) {
 								Inventory.addItemToMap(type, VS.Client.mob.xPos, VS.Client.mob.yPos, VS.Client.mob.mapName, itemInfo, quantityToDrop);
 							}
-							this.updateSlotQuantity(pSlotNumber, pQuantity);
+							this.discardQuantity(pSlotNumber, pQuantity);
 						} else {
 							if (typeof(VS.Client.onNetwork) === 'function') {
 								VS.Client.onNetwork('aInventory', 'removeItem', [[this.getID(), pSlotNumber, pQuantity]]);
-							}			
+							}
 						}
 					} else {
 						console.error('aInventory: No item in slot(' + pSlotNumber + ')');
@@ -610,16 +637,17 @@
 			/**
 			 * pSlotNumber: The slot number to remove the item from
 			 * pQuantity: If of value, then this item is stackable and this is the amount to remove from this item
-			 * desc: Removes the item from the passed slot
+			 * desc: Removes the item from the passed slot or removes the pQuantity amount from the item
 			 */
 			removeItemFromServer(pSlotNumber, pQuantity) {
-				this.updateSlotQuantity(pSlotNumber, pQuantity);
+				this.discardQuantity(pSlotNumber, pQuantity);
 			}
 			/**
 			 * pSlotNumber: The slot number to remove the item from
 			 * desc: Removes the item from the passed slot. Called when you drop a inventory item outside the inventory menu if disableDefaultDrop is not enabled
+			 * INTERNAL API
 			 */
-			removeItem(pSlotNumber, pQuantity) {
+			relinquish(pSlotNumber, pQuantity) {
 				if (this.isLocked()) {
 					console.warn('aInventory: This inventory is currently locked. Unlock it to remove this item');
 					return;
@@ -647,14 +675,14 @@
 									if ((currentQuantity - quantityToDrop) > ZERO) {
 										this.restoreSlot(pSlotNumber);
 									}
-									this.relinquish(pSlotNumber, quantityToDrop);
+									this.removeItem(pSlotNumber, quantityToDrop);
 								} else {
 									this.unlock();
 									this.restoreSlot(pSlotNumber);
 								}
 							}.bind(this));
 						} else {
-							this.relinquish(pSlotNumber, currentQuantity);
+							this.removeItem(pSlotNumber, currentQuantity);
 						}
 					} else {
 						console.error('aInventory: No item in slot(' + pSlotNumber + ')');
@@ -905,7 +933,7 @@
 						if (pDiob.mapName && pDiob.baseType !== 'Interface') {
 							if (!inventory.dropIsDisabled()) {
 								// If this diob is a map diob, drop it onto the map
-								inventory.removeItem(this.heldSlotInstance.getSlotNumber());
+								inventory.relinquish(this.heldSlotInstance.getSlotNumber());
 							}
 						} else if (this.heldSlotInstance === newSlotInstance) {
 							inventory.restoreSlot(this.heldSlotInstance.getSlotNumber());
@@ -944,7 +972,7 @@
 					} else {
 						if (!inventory.dropIsDisabled()) {
 							// If you are holding onto a slot and there is no diob at all (it must be a tile since they have no mouseOpacity by default or a map void)
-							inventory.removeItem(this.heldSlotInstance.getSlotNumber());
+							inventory.relinquish(this.heldSlotInstance.getSlotNumber());
 						}
 					}
 					this.heldSlotInstance.refresh();

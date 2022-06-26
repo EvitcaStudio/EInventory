@@ -440,26 +440,14 @@
 			Inventory.removeItemFromMap(pItem);
 		}
 		/**
-		 * pSlotNumber: Relinguish the data in this slot
-		 * pQuantity: The amount to relinquish
-		 * desc: This will drop the item inside of this slot number
+		 * pSlotNumber: The slot number to remove the item from
+		 * pQuantity: The amount to remove from this slot
+		 * desc: This will update the slots quantity with the new quantity after you remove pQuantity's amount
+		 * INTERNAL API
 		 */
-		relinquish(pSlotNumber, pQuantity) {
-			const itemInfo = this.getSlot(pSlotNumber).getItemInfo();
+		discardQuantity(pSlotNumber, pQuantity) {
+			// Get the amount of stacked items you have
 			const quantity = this.getSlot(pSlotNumber).getItemQuantity();
-			// Under this condition this means that the user does not want to drop anything, the item has a stack but they inputted 0
-			if (quantity & !pQuantity) return;
-			// Clamp the amount to drop down to what you have available to drop to prevent duplicate item bugs
-			pQuantity = clamp(pQuantity, !quantity ? ZERO : ONE, quantity);
-			const quantityToDrop = clamp(!quantity ? ZERO : pQuantity, !quantity ? ZERO : ONE, quantity);
-			if (!quantityToDrop && quantity) {
-				return;
-			}
-			const type = this.getSlot(pSlotNumber).getItemType();
-			const dissapearOnDrop = VS.Type.getVariable(type, 'dissapearOnDrop') ? VS.Type.getVariable(type, 'dissapearOnDrop') : VS.Type.getStaticVariable(type, 'dissapearOnDrop');
-			if (!dissapearOnDrop) {
-				Inventory.addItemToMap(type, this.getClient().mob.xPos, this.getClient().mob.yPos, this.getClient().mob.mapName, itemInfo, quantityToDrop);
-			}
 			// If there is no stored quantity in this slot, and there was no passed quantity to drop then the slot needs to be wiped since it was only one item
 			// If there was no quantity in this slot at all, even if a quantity was passed then this slot needs to be wiped since it was only one item
 			// If pQuantity is greater than the stored quantity then we wipe the slot
@@ -468,22 +456,46 @@
 			} else {
 				this.getSlot(pSlotNumber)._item.quantity = Math.max(quantity - pQuantity, ONE);
 			}
-			// Send packet to relinquish item. The server will remove the item from the inventory if the relinquish is legal and send a packet back to the client to do the same
-			if (typeof(this.getClient().onNetwork) === 'function') {
-				this.getClient().onNetwork('aInventory', 'removeItem', [[this.getID(), pSlotNumber, pQuantity]]);
-			}
 		}
 		/**
 		 * pSlotNumber: The slot number to remove the item from
-		 * pQuantity: If of value, then this item is stackable and this is the amount to remove from this item
-		 * desc: Removes the item from the passed slot. Called when you drop a inventory item outside the inventory menu
+		 * pQuantity: The amount to remove from this slot
+		 * desc: This will update the slots quantity with the new quantity after you remove pQuantity's amount
+		 */
+		removeQuantity(pSlotNumber, pQuantity) {
+			this.discardQuantity(pSlotNumber, pQuantity);
+			// Send packet to remove this amount from the client's inventory
+			if (typeof(this.getClient().onNetwork) === 'function') {
+				this.getClient().onNetwork('aInventory', 'removeQuantity', [[this.getID(), pSlotNumber, pQuantity]]);
+			}			
+		}
+		/**
+		 * pSlotNumber: Relinguish the data in this slot
+		 * pQuantity: The amount to remove
+		 * desc: This will drop the item inside of this slot number
 		 */
 		removeItem(pSlotNumber, pQuantity) {
 			if (this.isLocked()) {
 				console.warn('aInventory: This inventory is currently locked. Unlock it to remove this item');
 				return;
 			}
-			this.relinquish(pSlotNumber, pQuantity);
+			const itemInfo = this.getSlot(pSlotNumber).getItemInfo();
+			const quantity = this.getSlot(pSlotNumber).getItemQuantity();
+			// Under this condition this means that the user does not want to drop anything, the item has a stack but they inputted 0
+			if (quantity & !pQuantity) return;
+			// Clamp the amount to drop down to what you have available to drop to prevent duplicate item bugs
+			pQuantity = clamp(pQuantity, !quantity ? ZERO : ONE, quantity);
+			const quantityToDrop = clamp(!quantity ? ZERO : pQuantity, !quantity ? ZERO : ONE, quantity);
+			const type = this.getSlot(pSlotNumber).getItemType();
+			const dissapearOnDrop = VS.Type.getVariable(type, 'dissapearOnDrop') ? VS.Type.getVariable(type, 'dissapearOnDrop') : VS.Type.getStaticVariable(type, 'dissapearOnDrop');
+			if (!dissapearOnDrop) {
+				Inventory.addItemToMap(type, this.getClient().mob.xPos, this.getClient().mob.yPos, this.getClient().mob.mapName, itemInfo, quantityToDrop);
+			}
+			this.discardQuantity(pSlotNumber, pQuantity);
+			// Send packet to remove item. The server will remove the item from the inventory if the removal is legal and send a packet back to the client to do the same
+			if (typeof(this.getClient().onNetwork) === 'function') {
+				this.getClient().onNetwork('aInventory', 'removeItem', [[this.getID(), pSlotNumber, pQuantity]]);
+			}
 		}
 		/**
 		 * pInventoryID: The inventory the slot is going to, could be the same inventory as this, or it could be different inventory
