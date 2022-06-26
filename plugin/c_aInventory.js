@@ -578,13 +578,11 @@
 					console.warn('aInventory: This inventory is currently locked. Unlock it to remove this item');
 					return;
 				}
-				// If there is no quantity to drop, then do nothing
-				if (!pQuantity) return;
 				if (this.getSlot(pSlotNumber)) {
 					if (this.getSlot(pSlotNumber).hasItem()) {
 						const quantity = this.getSlot(pSlotNumber).getItemQuantity();
 						// Clamp the amount to drop down to what you have available to drop to prevent duplicate item bugs
-						pQuantity = clamp(pQuantity, !quantity ? ZERO : ONE, quantity);
+						pQuantity = clamp(pQuantity, (!quantity || quantity & !pQuantity) ? ZERO : ONE, quantity);
 						// This portion of the code only needs to run if the game is singleplayer. This will allow it to be added to the map.
 						if (VS.World.getCodeType() === 'local') {
 							const type = this.getSlot(pSlotNumber).getItemType();
