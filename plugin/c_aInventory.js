@@ -212,6 +212,12 @@
 				return this._maxDistance;
 			}
 			/**
+			 * desc: Gets the slot at the specified number
+			 */
+			getSlot(pSlotNumber) {
+				return this._slots[pSlotNumber] ? this._slots[pSlotNumber] : undefined;
+			}
+			/**
 			 * desc: Get the id of this inventory
 			 */
 			getID() {
@@ -223,7 +229,7 @@
 			getStorage() {
 				const storage = {};
 				for (let i = 0; i < this._maxSlots; i++) {
-					storage[i] = this._slots[i]._item;
+					storage[i] = this.getSlot(i)._item;
 				}
 				return storage;			
 			}
@@ -268,7 +274,7 @@
 			isMaxed() {
 				let maxed = true;
 				for (let i = 0; i < this._maxSlots; i++) {
-					if (!this._slots[i].hasItem()) {
+					if (!this.getSlot(i).hasItem()) {
 						maxed = false;
 						break;
 					}
@@ -281,7 +287,7 @@
 			getOpenSlot() {
 				let openSlot;
 				for (let i = 0; i < this._maxSlots; i++) {
-					if (!this._slots[i].hasItem()) {
+					if (!this.getSlot(i).hasItem()) {
 						openSlot = i;
 						break;
 					}
@@ -444,7 +450,7 @@
 			 */
 			restoreSlot(pSlotNumber) {
 				if (!this.isLocked()) {
-					this._slots[pSlotNumber].refresh();
+					this.getSlot(pSlotNumber).refresh();
 				}
 				this._activeSlotNumber = null;
 			}
@@ -464,14 +470,14 @@
 				if (ID) {
 					type = VS.World.getDiobByID(ID).type;
 				}
-				this._slots[pSlotNumber]._item.type = type;
+				this.getSlot(pSlotNumber)._item.type = type;
 				if (quantity) {
-					this._slots[pSlotNumber]._item.quantity = quantity;
+					this.getSlot(pSlotNumber)._item.quantity = quantity;
 				}
 				if (itemInfo) {
-					this._slots[pSlotNumber]._item.itemInfo = itemInfo;
+					this.getSlot(pSlotNumber)._item.itemInfo = itemInfo;
 				}
-				this._slots[pSlotNumber].refresh();
+				this.getSlot(pSlotNumber).refresh();
 			}
 			/**
 			 * pItem: An object holding all information about the item being added to the inventory.
@@ -492,8 +498,8 @@
 
 				// Search through the slots in the inventory to see if this item already exists
 				for (const slot in this._slots) {
-					if (this._slots[slot].getItemType() === type) {
-						const slotQuantity = this._slots[slot].getItemQuantity();
+					if (this.getSlot(slot).getItemType() === type) {
+						const slotQuantity = this.getSlot(slot).getItemQuantity();
 						// If this item has a quantity, it means it can be stacked
 						if (quantity) {
 							// Checks the instance's maxQuantity first, then the types variable, then the static variable, then if nothing is found it uses the default value
@@ -502,22 +508,22 @@
 							if (slotQuantity !== maxQuantity) {
 								if (slotQuantity + quantity > maxQuantity) {
 									const leftOverQuantity = Math.max((slotQuantity + quantity) - maxQuantity, 1);
-									this._slots[slot]._item.quantity = clamp(slotQuantity + quantity, slotQuantity, maxQuantity);
+									this.getSlot(slot)._item.quantity = clamp(slotQuantity + quantity, slotQuantity, maxQuantity);
 									if (itemInfo) {
-										this._slots[slot]._item.itemInfo = itemInfo;
+										this.getSlot(slot)._item.itemInfo = itemInfo;
 									}
-									this._slots[slot].refresh();
+									this.getSlot(slot).refresh();
 									pItem.quantity = leftOverQuantity;
 									// If you have more space in the inventory, add the remaining stack as a new item
 									this.addItem(pItem);
 									return;
 								// If you can pick up the full amount of this item, then remove this item from this map
 								} else {
-									this._slots[slot]._item.quantity = clamp(slotQuantity + quantity, slotQuantity, maxQuantity);
+									this.getSlot(slot)._item.quantity = clamp(slotQuantity + quantity, slotQuantity, maxQuantity);
 									if (itemInfo) {
-										this._slots[slot]._item.itemInfo = itemInfo;
+										this.getSlot(slot)._item.itemInfo = itemInfo;
 									}
-									this._slots[slot].refresh();
+									this.getSlot(slot).refresh();
 									Inventory.removeItemFromMap(pItem);
 									return;
 								}
@@ -539,8 +545,8 @@
 				if (itemInfo) {
 					slotItem.itemInfo = itemInfo;
 				}
-				this._slots[nearestSlot]._item = slotItem;
-				this._slots[nearestSlot].refresh();
+				this.getSlot(nearestSlot)._item = slotItem;
+				this.getSlot(nearestSlot).refresh();
 				Inventory.removeItemFromMap(pItem);
 			}
 			/**
@@ -550,16 +556,16 @@
 			 */
 			updateSlotQuantity(pSlotNumber, pQuantity) {
 				// Get the amount of stacked items you have
-				const quantity = this._slots[pSlotNumber].getItemQuantity();
+				const quantity = this.getSlot(pSlotNumber).getItemQuantity();
 				// If there is no stored quantity in this slot, and there was no passed quantity to drop then the slot needs to be wiped since it was only one item
 				// If there was no quantity in this slot at all, even if a quantity was passed then this slot needs to be wiped since it was only one item
 				// If pQuantity is greater than the stored quantity then we wipe the slot 
 				if ((!quantity && !pQuantity) || !quantity || pQuantity >= quantity) {
-					this._slots[pSlotNumber].wipe();
+					this.getSlot(pSlotNumber).wipe();
 				} else {
-					this._slots[pSlotNumber]._item.quantity = Math.max(quantity - pQuantity, 1);
+					this.getSlot(pSlotNumber)._item.quantity = Math.max(quantity - pQuantity, 1);
 				}
-				this._slots[pSlotNumber].refresh();
+				this.getSlot(pSlotNumber).refresh();
 			}
 			/**
 			 * pSlotNumber: Relinguish the data in this slot
@@ -572,15 +578,15 @@
 					console.warn('aInventory: This inventory is currently locked. Unlock it to remove this item');
 					return;
 				}
-				if (this._slots[pSlotNumber]) {
-					if (this._slots[pSlotNumber].hasItem()) {
-						const quantity = this._slots[pSlotNumber].getItemQuantity();
+				if (this.getSlot(pSlotNumber)) {
+					if (this.getSlot(pSlotNumber).hasItem()) {
+						const quantity = this.getSlot(pSlotNumber).getItemQuantity();
 						// Clamp the amount to drop down to what you have available to drop to prevent duplicate item bugs
 						pQuantity = clamp(pQuantity, !quantity ? ZERO : ONE, quantity);
 						// This portion of the code only needs to run if the game is singleplayer. This will allow it to be added to the map.
 						if (VS.World.getCodeType() === 'local') {
-							const type = this._slots[pSlotNumber].getItemType();
-							const itemInfo = this._slots[pSlotNumber].getItemInfo();
+							const type = this.getSlot(pSlotNumber).getItemType();
+							const itemInfo = this.getSlot(pSlotNumber).getItemInfo();
 							const quantityToDrop = clamp(!quantity ? ZERO : pQuantity, !quantity ? ZERO : ONE, quantity);
 							const dissapearOnDrop = VS.Type.getVariable(type, 'dissapearOnDrop') ? VS.Type.getVariable(type, 'dissapearOnDrop') : VS.Type.getStaticVariable(type, 'dissapearOnDrop');
 							if (!dissapearOnDrop) {
@@ -616,10 +622,10 @@
 					console.warn('aInventory: This inventory is currently locked. Unlock it to remove this item');
 					return;
 				}
-				if (this._slots[pSlotNumber]) {
-					if (this._slots[pSlotNumber].hasItem()) {
+				if (this.getSlot(pSlotNumber)) {
+					if (this.getSlot(pSlotNumber).hasItem()) {
 						let quantityToDrop = ONE;
-						const currentQuantity = this._slots[pSlotNumber].getItemQuantity();
+						const currentQuantity = this.getSlot(pSlotNumber).getItemQuantity();
 
 						// If the item you are relinquishing has a quantity it means it is stackable and has the ability to have more than one of itself. If there is more than one of them, then you need to decide how many to relinquish.
 						if (currentQuantity > ONE) {

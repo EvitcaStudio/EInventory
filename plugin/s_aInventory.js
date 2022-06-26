@@ -134,6 +134,12 @@
 			return this._maxDistance;
 		}
 		/**
+		 * desc: Gets the slot at the specified number
+		 */
+		getSlot(pSlotNumber) {
+			return this._slots[pSlotNumber] ? this._slots[pSlotNumber] : undefined;
+		}
+		/**
 		 * desc: Get the id of this inventory
 		 */
 		getID() {
@@ -151,7 +157,7 @@
 		getStorage() {
 			const storage = {};
 			for (let i = 0; i < this._maxSlots; i++) {
-				storage[i] = this._slots[i]._item;
+				storage[i] = this.getSlot(i)._item;
 			}
 			return storage;			
 		}
@@ -184,7 +190,7 @@
 		isMaxed() {
 			let maxed = true;
 			for (let i = 0; i < this._maxSlots; i++) {
-				if (!this._slots[i].hasItem()) {
+				if (!this.getSlot(i).hasItem()) {
 					maxed = false;
 					break;
 				}
@@ -197,7 +203,7 @@
 		getOpenSlot() {
 			let openSlot;
 			for (let i = 0; i < this._maxSlots; i++) {
-				if (!this._slots[i].hasItem()) {
+				if (!this.getSlot(i).hasItem()) {
 					openSlot = i;
 					break;
 				}
@@ -369,8 +375,8 @@
 			}
 			// Search through the slots in the inventory to see if this item already exists
 			for (const slot in this._slots) {
-				if (this._slots[slot].getItemType() === type) {
-					const slotQuantity = this._slots[slot].getItemQuantity();
+				if (this.getSlot(slot).getItemType() === type) {
+					const slotQuantity = this.getSlot(slot).getItemQuantity();
 					// If this item has a quantity, it means it can be stacked
 					if (quantity) {
 						// Checks the instance's maxQuantity first, then the types variable, then the static variable, then if nothing is found it uses the default value
@@ -379,10 +385,10 @@
 						if (slotQuantity !== maxQuantity) {
 							if (slotQuantity + quantity > maxQuantity) {
 								const leftOverQuantity = Math.max((slotQuantity + quantity) - maxQuantity, 1);
-								this._slots[slot]._item.quantity = clamp(slotQuantity + quantity, slotQuantity, maxQuantity);
-								formattedItemData[1] = this._slots[slot]._item.quantity;
+								this.getSlot(slot)._item.quantity = clamp(slotQuantity + quantity, slotQuantity, maxQuantity);
+								formattedItemData[1] = this.getSlot(slot)._item.quantity;
 								if (itemInfo) {
-									this._slots[slot]._item.itemInfo = itemInfo;
+									this.getSlot(slot)._item.itemInfo = itemInfo;
 								}
 										
 								if (typeof(this.getClient().onNetwork) === 'function') {
@@ -395,10 +401,10 @@
 								return;
 							// If you can pick up the full amount of this item, then remove this item from this map
 							} else {
-								this._slots[slot]._item.quantity = clamp(slotQuantity + quantity, slotQuantity, maxQuantity);
-								formattedItemData[1] = this._slots[slot]._item.quantity;
+								this.getSlot(slot)._item.quantity = clamp(slotQuantity + quantity, slotQuantity, maxQuantity);
+								formattedItemData[1] = this.getSlot(slot)._item.quantity;
 								if (itemInfo) {
-									this._slots[slot]._item.itemInfo = itemInfo;
+									this.getSlot(slot)._item.itemInfo = itemInfo;
 								}
 										
 								if (typeof(this.getClient().onNetwork) === 'function') {
@@ -419,12 +425,12 @@
 			}
 				
 			const nearestSlot = this.getOpenSlot();
-			this._slots[nearestSlot]._item.type = type;
+			this.getSlot(nearestSlot)._item.type = type;
 			if (quantity) {
-				this._slots[nearestSlot]._item.quantity = quantity;
+				this.getSlot(nearestSlot)._item.quantity = quantity;
 			}
 			if (itemInfo) {
-				this._slots[nearestSlot]._item.itemInfo = itemInfo;
+				this.getSlot(nearestSlot)._item.itemInfo = itemInfo;
 			}
 					
 			if (typeof(this.getClient().onNetwork) === 'function') {	
@@ -439,15 +445,15 @@
 		 * desc: This will drop the item inside of this slot number
 		 */
 		relinquish(pSlotNumber, pQuantity) {
-			const itemInfo = this._slots[pSlotNumber].getItemInfo();
-			const quantity = this._slots[pSlotNumber].getItemQuantity();
+			const itemInfo = this.getSlot(pSlotNumber).getItemInfo();
+			const quantity = this.getSlot(pSlotNumber).getItemQuantity();
 			// Clamp the amount to drop down to what you have available to drop to prevent duplicate item bugs
 			pQuantity = clamp(pQuantity, !quantity ? ZERO : ONE, quantity);
 			const quantityToDrop = clamp(!quantity ? ZERO : pQuantity, !quantity ? ZERO : ONE, quantity);
 			if (!quantityToDrop && quantity) {
 				return;
 			}
-			const type = this._slots[pSlotNumber].getItemType();
+			const type = this.getSlot(pSlotNumber).getItemType();
 			const dissapearOnDrop = VS.Type.getVariable(type, 'dissapearOnDrop') ? VS.Type.getVariable(type, 'dissapearOnDrop') : VS.Type.getStaticVariable(type, 'dissapearOnDrop');
 			if (!dissapearOnDrop) {
 				Inventory.addItemToMap(type, this.getClient().mob.xPos, this.getClient().mob.yPos, this.getClient().mob.mapName, itemInfo, quantityToDrop);
@@ -456,9 +462,9 @@
 			// If there was no quantity in this slot at all, even if a quantity was passed then this slot needs to be wiped since it was only one item
 			// If pQuantity is greater than the stored quantity then we wipe the slot
 			if ((!quantity && !pQuantity) || !quantity || pQuantity >= quantity) {
-				this._slots[pSlotNumber].wipe();
+				this.getSlot(pSlotNumber).wipe();
 			} else {
-				this._slots[pSlotNumber]._item.quantity = Math.max(quantity - pQuantity, ONE);
+				this.getSlot(pSlotNumber)._item.quantity = Math.max(quantity - pQuantity, ONE);
 			}
 			// Send packet to relinquish item. The server will remove the item from the inventory if the relinquish is legal and send a packet back to the client to do the same
 			if (typeof(this.getClient().onNetwork) === 'function') {
@@ -485,7 +491,7 @@
 		 */
 		moveSlot(pInventoryID, pSlotNumber1, pSlotNumber2) {
 			if (!this.isLocked()) {
-				const slotInstance1 = this._slots[pSlotNumber1];
+				const slotInstance1 = this.getSlot(pSlotNumber1);
 				const slotInstance2 = aInventory.getInventoryByID(pInventoryID)._slots[pSlotNumber2];
 				// We get the inventory of this new slot, since dragging to a different is a valid action
 				const inventory = slotInstance2.getParent();
@@ -505,7 +511,7 @@
 		 */
 		swapSlots(pInventoryID, pSlotNumber1, pSlotNumber2) {
 			if (!this.isLocked()) {
-				const slotInstance1 = this._slots[pSlotNumber1];
+				const slotInstance1 = this.getSlot(pSlotNumber1);
 				const slotInstance2 = aInventory.getInventoryByID(pInventoryID)._slots[pSlotNumber2];
 				// We get the inventory of this new slot, since dragging to a different is a valid action
 				const inventory = slotInstance2.getParent();
