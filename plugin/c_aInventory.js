@@ -5,7 +5,7 @@
 			buildClientInventory();
 		}
 	});
-
+	
 	const buildClientInventory = () => {
 		const aInventory = {};
 		VS.Client.___EVITCA_aInventory = true;
@@ -996,7 +996,7 @@
 			this.debugging = !this.debugging;
 		}
 
-		VS.global.aListener.addEventListener(VS.Client, 'onMouseDown', aInventory.handleOnMouseDown.bind(aInventory));
-		VS.global.aListener.addEventListener(VS.Client, 'onMouseUp', aInventory.handleOnMouseUp.bind(aInventory));
+		AListener.addEventListener(VS.Client, 'onMouseDown', aInventory.handleOnMouseDown.bind(aInventory));
+		AListener.addEventListener(VS.Client, 'onMouseUp', aInventory.handleOnMouseUp.bind(aInventory));
 	}
 })();
