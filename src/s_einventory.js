@@ -1,20 +1,20 @@
 (() => {
-	const aInventory = {};
-	VS.global.aInventory = aInventory;
-	global.aInventory = aInventory;
+	const EInventory = {};
+	VYLO.global.EInventory = EInventory;
+	globalThis.EInventory = EInventory;
 
 	/**
 	 * desc: An object full of stored slot types. This is used to reference diob types in mouse events
 	 */
-	aInventory.storedSlotTypes = {};
+	EInventory.storedSlotTypes = {};
 	/**
 	 * desc: Stored inventories
 	 */
-	aInventory.storedInventories = {};
+	EInventory.storedInventories = {};
 	/**
 	 * desc: Stored IDs
 	 */
-	aInventory.storedIDs = [];
+	EInventory.storedIDs = [];
 
 	const ZERO = 0;
 	const ONE = 1;
@@ -215,12 +215,12 @@
 		 * desc: Registers this type so that it can be added to this inventory
 		 */
 		registerType(pType) {
-			if (VS.Type.isType(pType)) {
+			if (VYLO.Type.isType(pType)) {
 				if (!this._registeredTypes.includes(pType)) {
 					this._registeredTypes.push(pType);
 				}
 			} else {
-				console.warn('aInventory: This is not a valid type. Registration failed');
+				console.warn('EInventory: This is not a valid type. Registration failed');
 			}
 		}
 		/**
@@ -265,7 +265,7 @@
 		 * desc: Add item to the map since it was dropped
 		 */
 		static addItemToMap(pType, pX, pY, pMap, pItemInfo, pQuantity) {
-			const item = VS.newDiob(pType);
+			const item = VYLO.newDiob(pType);
 			if (pItemInfo) item.itemInfo = pItemInfo;
 			if (pQuantity) item.quantity = pQuantity;
 			item.setPos(pX, pY, pMap);
@@ -282,7 +282,7 @@
 				pItem.onPickup();
 			}
 
-			VS.delDiob(pItem);
+			VYLO.delDiob(pItem);
 		}
 		/**
 		 * pItemID: The id of the diob you want to autheticate server side
@@ -298,14 +298,14 @@
 			let childType = false;
 			// Allows children types of a registered type to be added
 			for (const rT of this._registeredTypes) {
-				if (VS.Type.isType(pItemType, rT)) {
+				if (VYLO.Type.isType(pItemType, rT)) {
 					childType = true;
 					break
 				}
 			}
 			// If this is not an registered type or a child of a registered type this cannot be added to the inventory
 			if (!this._registeredTypes.includes(pItemType) && !childType) {
-				console.error('aInventory: This type(' + pItemType + ') is not of a registered type with this inventory.');
+				console.error('EInventory: This type(' + pItemType + ') is not of a registered type with this inventory.');
 				return false;
 			}
 			return true;
@@ -317,7 +317,7 @@
 		isEligibleItem(pItem) {
 			if (pItem) {
 				if (!pItem.obtainable) {
-					console.error('aInventory: This item(' + pItem.id + ') is not obtainable.');
+					console.error('EInventory: This item(' + pItem.id + ') is not obtainable.');
 					return false;
 				}
 				if (!this.isEligibleType(pItem.type)) {
@@ -326,15 +326,15 @@
 				// Things that can be stacked have a quantity variable. If there is no quantity set then this is not a stackable item
 				// If the inventory is full, and you pick up a item that is stackable, it will still check if it can be added to another stack instead of returning out.
 				if (this.isMaxed() && !pItem.quantity) {
-					console.error('aInventory: %cpNo available slots', 'font-weight: bold');
+					console.error('EInventory: %cpNo available slots', 'font-weight: bold');
 					return false;
 				}
-				if (VS.Map.getDist(this.getClient().mob, pItem) > this.getMaxDistance()) {
-					console.error('aInventory: This item(' + pItem.id + ') is out of range.');
+				if (VYLO.Map.getDist(this.getClient().mob, pItem) > this.getMaxDistance()) {
+					console.error('EInventory: This item(' + pItem.id + ') is out of range.');
 					return false;
 				}
 			} else {
-				console.error('aInventory: No item passed!');
+				console.error('EInventory: No item passed!');
 				return false;
 			}
 			return true;
@@ -344,7 +344,7 @@
 		 * desc: If the game is ran in a multiplayer environment then the item will be autheticated by the server, this is to prevent spoofing of items
 		 */
 		obtain(pItemID) {
-			const item = VS.World.getDiobByID(pItemID);
+			const item = VYLO.World.getDiobByID(pItemID);
 			if (item) {
 				if (this.isEligibleItem(item)) {
 					this.addItem(item);
@@ -360,12 +360,12 @@
 		addItem(pItem) {
 			// If this inventory is locked you cannot use it.
 			if (this.isLocked()) {
-				console.warn('aInventory: This inventory is currently locked. Unlock it to pick up this item');
+				console.warn('EInventory: This inventory is currently locked. Unlock it to pick up this item');
 				return;
 			}
 			const type = pItem.type;
 			const quantity = pItem.quantity;
-			const itemInfo = pItem.itemInfo ? pItem.itemInfo : VS.Type.getVariable(type, 'itemInfo') ? VS.Type.getVariable(type, 'itemInfo') : VS.Type.getStaticVariable(type, 'itemInfo');
+			const itemInfo = pItem.itemInfo ? pItem.itemInfo : VYLO.Type.getVariable(type, 'itemInfo') ? VYLO.Type.getVariable(type, 'itemInfo') : VYLO.Type.getStaticVariable(type, 'itemInfo');
 			const formattedItemData = { 0: pItem.id };
 			if (quantity) {
 				formattedItemData[1] = quantity;
@@ -380,7 +380,7 @@
 					// If this item has a quantity, it means it can be stacked
 					if (quantity) {
 						// Checks the instance's maxQuantity first, then the types variable, then the static variable, then if nothing is found it uses the default value
-						const maxQuantity = pItem.maxQuantity ? pItem.maxQuantity : VS.Type.getVariable(type, 'maxQuantity') ? VS.Type.getVariable(type, 'maxQuantity') : VS.Type.getStaticVariable(type, 'maxQuantity') ? VS.Type.getStaticVariable(type, 'maxQuantity') : DEFAULT_MAX_QUANTITY;
+						const maxQuantity = pItem.maxQuantity ? pItem.maxQuantity : VYLO.Type.getVariable(type, 'maxQuantity') ? VYLO.Type.getVariable(type, 'maxQuantity') : VYLO.Type.getStaticVariable(type, 'maxQuantity') ? VYLO.Type.getStaticVariable(type, 'maxQuantity') : DEFAULT_MAX_QUANTITY;
 						// If this slot is not full and it isn't a full stack of items being added
 						if (slotQuantity !== maxQuantity) {
 							if (slotQuantity + quantity > maxQuantity) {
@@ -392,7 +392,7 @@
 								}
 										
 								if (typeof(this.getClient().onNetwork) === 'function') {
-									this.getClient().onNetwork('aInventory', 'addItem', [[this.getID(), formattedItemData, slot]]);
+									this.getClient().onNetwork('EInventory', 'addItem', [[this.getID(), formattedItemData, slot]]);
 								}
 
 								pItem.quantity = leftOverQuantity;
@@ -408,7 +408,7 @@
 								}
 										
 								if (typeof(this.getClient().onNetwork) === 'function') {
-									this.getClient().onNetwork('aInventory', 'addItem', [[this.getID(), formattedItemData, slot]]);
+									this.getClient().onNetwork('EInventory', 'addItem', [[this.getID(), formattedItemData, slot]]);
 								} 
 
 								Inventory.removeItemFromMap(pItem);
@@ -420,7 +420,7 @@
 			}
 
 			if (this.isMaxed()) {
-				console.error('aInventory: %cpNo available slots', 'font-weight: bold');
+				console.error('EInventory: %cpNo available slots', 'font-weight: bold');
 				return;
 			}
 				
@@ -434,7 +434,7 @@
 			}
 					
 			if (typeof(this.getClient().onNetwork) === 'function') {	
-				this.getClient().onNetwork('aInventory', 'addItem', [[this.getID(), formattedItemData, nearestSlot]]);
+				this.getClient().onNetwork('EInventory', 'addItem', [[this.getID(), formattedItemData, nearestSlot]]);
 			} 
 
 			Inventory.removeItemFromMap(pItem);
@@ -466,7 +466,7 @@
 			this.discardQuantity(pSlotNumber, pQuantity);
 			// Send packet to remove this amount from the client's inventory
 			if (typeof(this.getClient().onNetwork) === 'function') {
-				this.getClient().onNetwork('aInventory', 'removeQuantity', [[this.getID(), pSlotNumber, pQuantity]]);
+				this.getClient().onNetwork('EInventory', 'removeQuantity', [[this.getID(), pSlotNumber, pQuantity]]);
 			}			
 		}
 		/**
@@ -476,7 +476,7 @@
 		 */
 		removeItem(pSlotNumber, pQuantity) {
 			if (this.isLocked()) {
-				console.warn('aInventory: This inventory is currently locked. Unlock it to remove this item');
+				console.warn('EInventory: This inventory is currently locked. Unlock it to remove this item');
 				return;
 			}
 			const itemInfo = this.getSlot(pSlotNumber).getItemInfo();
@@ -487,14 +487,14 @@
 			pQuantity = clamp(pQuantity, !quantity ? ZERO : ONE, quantity);
 			const quantityToDrop = clamp(!quantity ? ZERO : pQuantity, !quantity ? ZERO : ONE, quantity);
 			const type = this.getSlot(pSlotNumber).getItemType();
-			const dissapearOnDrop = VS.Type.getVariable(type, 'dissapearOnDrop') ? VS.Type.getVariable(type, 'dissapearOnDrop') : VS.Type.getStaticVariable(type, 'dissapearOnDrop');
+			const dissapearOnDrop = VYLO.Type.getVariable(type, 'dissapearOnDrop') ? VYLO.Type.getVariable(type, 'dissapearOnDrop') : VYLO.Type.getStaticVariable(type, 'dissapearOnDrop');
 			if (!dissapearOnDrop) {
 				Inventory.addItemToMap(type, this.getClient().mob.xPos, this.getClient().mob.yPos, this.getClient().mob.mapName, itemInfo, quantityToDrop);
 			}
 			this.discardQuantity(pSlotNumber, pQuantity);
 			// Send packet to remove item. The server will remove the item from the inventory if the removal is legal and send a packet back to the client to do the same
 			if (typeof(this.getClient().onNetwork) === 'function') {
-				this.getClient().onNetwork('aInventory', 'removeItem', [[this.getID(), pSlotNumber, pQuantity]]);
+				this.getClient().onNetwork('EInventory', 'removeItem', [[this.getID(), pSlotNumber, pQuantity]]);
 			}
 		}
 		/**
@@ -506,7 +506,7 @@
 		moveSlot(pInventoryID, pSlotNumber1, pSlotNumber2) {
 			if (!this.isLocked()) {
 				const slotInstance1 = this.getSlot(pSlotNumber1);
-				const slotInstance2 = aInventory.getInventoryByID(pInventoryID)._slots[pSlotNumber2];
+				const slotInstance2 = EInventory.getInventoryByID(pInventoryID)._slots[pSlotNumber2];
 				// We get the inventory of this new slot, since dragging to a different is a valid action
 				const inventory = slotInstance2.getParent();
 				if (inventory.isEligibleType(slotInstance1.getItemType())) {
@@ -526,7 +526,7 @@
 		swapSlots(pInventoryID, pSlotNumber1, pSlotNumber2) {
 			if (!this.isLocked()) {
 				const slotInstance1 = this.getSlot(pSlotNumber1);
-				const slotInstance2 = aInventory.getInventoryByID(pInventoryID)._slots[pSlotNumber2];
+				const slotInstance2 = EInventory.getInventoryByID(pInventoryID)._slots[pSlotNumber2];
 				// We get the inventory of this new slot, since dragging to a different is a valid action
 				const inventory = slotInstance2.getParent();
 				// Inventory most times will be a reference to this interface itself, if a user is swapping items between the same inventory
@@ -546,7 +546,7 @@
 	/**
 	 * desc: Returns a unique ID for use
 	 */
-	aInventory.generateID = function(pID = 7) {
+	EInventory.generateID = function(pID = 7) {
 		const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 		const makeID = function() {
 			let ID = '';
@@ -577,28 +577,28 @@
 	 * pSettings.denotar: The suffix this inventory will append to the items's iconName that it picks up. This will be used to find the appropriate icon per item stored. The default is "_gui"
 	 * pSettings.disableDefaultDrop: If this inventory will prevent the default action for dropping items. This means the user will drop things themselves.
 	 */
-	aInventory.createInventory = function(pClient, pSettings) {
+	EInventory.createInventory = function(pClient, pSettings) {
 		const MAX_REGISTERED_TYPES = 50;
 		const USE_DEFAULT = 0;
 		if (typeof(pSettings) === 'object' && pSettings.constructor === Object) {
 			if (!pSettings.interface) {
-				console.error('aInventory: The pSettings.interface string could not be found. Initialization failed.');
+				console.error('EInventory: The pSettings.interface string could not be found. Initialization failed.');
 				return;					
 			}
 			if (!pSettings.itemAtlasName) {
-				console.error('aInventory: The pSettings.itemAtlasName string could not be found. Initialization failed.');
+				console.error('EInventory: The pSettings.itemAtlasName string could not be found. Initialization failed.');
 				return;					
 			}
 			if (typeof(pSettings.slotType) !== 'string') {
-				console.error('aInventory: The pSettings.slotType is of the wrong type. Expecting a string. Initialization failed.');
+				console.error('EInventory: The pSettings.slotType is of the wrong type. Expecting a string. Initialization failed.');
 				return;
 			}
 			if (!pSettings.slotType) {
-				console.error('aInventory: pSettings.slotType was not found! This is a needed property');
+				console.error('EInventory: pSettings.slotType was not found! This is a needed property');
 				return;
 			}
 			if (!pSettings.clientVariable) {
-				console.error('aInventory: pSettings.clientVariable was not found! This is a needed property');
+				console.error('EInventory: pSettings.clientVariable was not found! This is a needed property');
 				return;
 			}
 			if (pSettings.sendItemInfo) {
@@ -620,14 +620,14 @@
 			
 			if (!Array.isArray(pSettings.slotClassList)) {
 				pSettings.slotClassList = USE_DEFAULT;
-				console.error('aInventory: The pSettings.slotClassList is not of the Array type.');
+				console.error('EInventory: The pSettings.slotClassList is not of the Array type.');
 			}
 			if (!Array.isArray(pSettings.registeredTypes)) {
 				pSettings.registeredTypes = USE_DEFAULT;
-				console.warn('aInventory: This inventory has no registered types to accept. It will not be able to store anything until a type is registered!');
+				console.warn('EInventory: This inventory has no registered types to accept. It will not be able to store anything until a type is registered!');
 			} else if (pSettings.registeredTypes.length > MAX_REGISTERED_TYPES) {
 				pSettings.registeredTypes = [];
-				console.error('aInventory: This inventory has TOO MANY registered types to accept. There is a hard limit set because this data has to travel over the network');
+				console.error('EInventory: This inventory has TOO MANY registered types to accept. There is a hard limit set because this data has to travel over the network');
 				return;
 			}
 
@@ -637,23 +637,23 @@
 			const inventory = new Inventory(pSettings);
 			this.storedInventories[pSettings.id] = inventory;
 			if (typeof(pClient.onNetwork) === 'function') {
-				pClient.onNetwork('aInventory', 'createInventory', [[pSettings.interface, pSettings.itemAtlasName, pSettings.slotType, pSettings.global, pSettings.maxSlots, pSettings.maxDistance, pSettings.slotClassList, pSettings.registeredTypes, pSettings.denotar, pSettings.id, pSettings.clientVariable, pSettings.disableDefaultDrop]]);
+				pClient.onNetwork('EInventory', 'createInventory', [[pSettings.interface, pSettings.itemAtlasName, pSettings.slotType, pSettings.global, pSettings.maxSlots, pSettings.maxDistance, pSettings.slotClassList, pSettings.registeredTypes, pSettings.denotar, pSettings.id, pSettings.clientVariable, pSettings.disableDefaultDrop]]);
 			}
 			return inventory;
 		} else {
-			console.warn('aInventory: Invalid type passed for pSettings');
+			console.warn('EInventory: Invalid type passed for pSettings');
 		}
 	}
 
-	aInventory.getInventoryByID = function(pInventoryID) {
+	EInventory.getInventoryByID = function(pInventoryID) {
 		return this.storedInventories[pInventoryID];
 	}
 
-	aInventory.isHoldingItem = function() {
+	EInventory.isHoldingItem = function() {
 		return this.grabbing ? true : false;
 	}
 
-	aInventory.toggleDebug = function() {
+	EInventory.toggleDebug = function() {
 		this.debugging = !this.debugging;
 	}
 

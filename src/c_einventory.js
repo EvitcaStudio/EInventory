@@ -1,45 +1,45 @@
 (() => {
 	const engineWaitId = setInterval(() => {
-		if (VS.Client) {
+		if (VYLO.Client) {
 			clearInterval(engineWaitId);
 			buildClientInventory();
 		}
 	});
 	
 	const buildClientInventory = () => {
-		const aInventory = {};
-		VS.Client.___EVITCA_aInventory = true;
-		VS.Client.aInventory = aInventory;
-		window.aInventory = aInventory;
-		VS.Client.addWebStyle('aInventory_input', '.aInventory_modal{display:none;position:fixed;font-family:Arial;z-index:999999;padding-top:100px;left:0;top:0;width:100%;height:100%;overflow:auto;background-color:rgb(0,0,0);background-color:rgba(0,0,0,.4);user-select:none}.aInventory_modalContent{background-color:#fefefe;margin:auto;padding:20px;border:1px solid #888;border-radius:20px;width:15%}.aInventory_modalInput{width:100%}.aInventory_modalClose{color:#aaa;float:right;font-size:28px;font-weight:700}.aInventory_modalClose:hover,.aInventory_modalClose:focus{color:#000;text-decoration:none;cursor:pointer}.aInventory_animateZoom{animation:aInventory_animatezoom 0.3s}@keyframes aInventory_animatezoom{from{transform:scale(0)}to{transform:scale(1)}}');
-		VS.Client.createInterface('aInterface_input_interface');
-		const interface = VS.newDiob('Interface');
-		const WINDOW_SIZE = VS.Client.getWindowSize();
-		interface.interfaceType = 'WebBox';
-		interface.width = WINDOW_SIZE.width;
-		interface.height = WINDOW_SIZE.height;
-		interface.mouseOpacity = 0;
-		interface.touchOpacity = 0;
-		interface.preventAutoScale = true;
-		VS.Client.addInterfaceElement(interface, 'aInterface_input_interface', 'aInterface_input', 0, 0);
-		interface.text = '<div class=aInventory_modal id=aInventory_modal><div class="aInventory_animateZoom aInventory_modalContent"><span class=aInventory_modalClose id=aInventory_modalClose>×</span><p id=aInventory_modalTitleContent>Drop how many?<form><div><input class=aInventory_modalInput id=aInventory_modalInput min="0" placeholder="1" type="number" value="1"><p><button id=aInventory_submit type=button>Ok</button></div></form></div></div>';
-		VS.Client.showInterface('aInterface_input_interface');
-		VS.global.aInventory = aInventory;
+		const EInventory = {};
+		globalThis.EInventory = EInventory;
+		VYLO.Client.addWebStyle('EInventory_input', '.EInventory_modal{display:none;position:fixed;font-family:Arial;z-index:999999;padding-top:100px;left:0;top:0;width:100%;height:100%;overflow:auto;background-color:rgb(0,0,0);background-color:rgba(0,0,0,.4);user-select:none}.EInventory_modalContent{background-color:#fefefe;margin:auto;padding:20px;border:1px solid #888;border-radius:20px;width:15%}.EInventory_modalInput{width:100%}.EInventory_modalClose{color:#aaa;float:right;font-size:28px;font-weight:700}.EInventory_modalClose:hover,.EInventory_modalClose:focus{color:#000;text-decoration:none;cursor:pointer}.EInventory_animateZoom{animation:EInventory_animatezoom 0.3s}@keyframes EInventory_animatezoom{from{transform:scale(0)}to{transform:scale(1)}}');
+		VYLO.Client.createInterface('EInventory_input_interface');
+		
+		const WINDOW_SIZE = VYLO.Client.getWindowSize();
+		const modal = VYLO.newDiob('Interface');
+		
+		modal.interfaceType = 'WebBox';
+		modal.width = WINDOW_SIZE.width;
+		modal.height = WINDOW_SIZE.height;
+		modal.mouseOpacity = 0;
+		modal.touchOpacity = 0;
+		modal.preventAutoScale = true;
+		VYLO.Client.addInterfaceElement(modal, 'EInventory_input_interface', 'EInventory_input', 0, 0);
+		modal.text = '<div class=EInventory_modal id=EInventory_modal><div class="EInventory_animateZoom EInventory_modalContent"><span class=EInventory_modalClose id=EInventory_modalClose>×</span><p id=EInventory_modalTitleContent>Drop how many?<form><div><input class=EInventory_modalInput id=EInventory_modalInput min="0" placeholder="1" type="number" value="1"><p><button id=EInventory_submit type=button>Ok</button></div></form></div></div>';
+		VYLO.Client.showInterface('EInventory_input_interface');
+		VYLO.global.EInventory = EInventory;
 
 		/**
 		 * desc: An object full of stored slot types. This is used to reference diob types in mouse events
 		 */
-		aInventory.storedSlotTypes = {};
+		EInventory.storedSlotTypes = {};
 		/**
 		 * desc: An object full of each inventory created stored via ID, this is used in a SERVER-CLIENT relationship
 		 */
-		aInventory.storedInventories = {};
+		EInventory.storedInventories = {};
 
 		/**
 		 * pSlotElement: The element that will have this overlay placed on it
 		 * desc: Add this overlay to pSlotElement
 		 */
-		aInventory.highlightSlot = function(pSlotElement) {
+		EInventory.highlightSlot = function(pSlotElement) {
 			if (this.slotHighlight) {
 				if (!pSlotElement.getOverlays().includes(this.slotHighlight)) {
 					pSlotElement.addOverlay(this.slotHighlight);
@@ -50,14 +50,14 @@
 		 * pSlotElement: The element that will have this overlay placed on it
 		 * desc: Remove the overlay from pSlotElement
 		 */
-		aInventory.unhighlightSlot = function(pSlotElement) {
+		EInventory.unhighlightSlot = function(pSlotElement) {
 			if (pSlotElement.getOverlays().includes(this.slotHighlight)) {
 				pSlotElement.removeOverlay(this.slotHighlight, true);
 			}
 		}
 
 		const ZERO = 0;
-		const ONE = 1;		
+		const ONE = 1;
 		const DEFAULT_MAX_QUANTITY = 1;
 		const DEFAULT_MAX_SLOTS = 20;
 		const DEFAULT_MAX_DISTANCE = 48;
@@ -76,14 +76,14 @@
 				// The item that this slot is currently holding
 				this._item = {};
 				// The overlay used to show the icon of the item in the slot
-				this._overlay = VS.newDiob('Overlay');
+				this._overlay = VYLO.newDiob('Overlay');
 				// Remove touch events and mouse events for this overlay
 				this._overlay.touchOpacity = 0;
 				this._overlay.mouseOpacity = 0;
 				// Add appearmask
 				this._overlay.appearMask = { 'ownState': true, 'ownAnim': true, 'ownMod': true };
 				// Animate sync if an overlay is animated
-				this._overlay.animator = { 'sync': 'aInventory_overlay_sync'};
+				this._overlay.animator = { 'sync': 'EInventory_overlay_sync' };
 				// Prevent auto scale
 				this._overlay.preventAutoScale = true;
 			}
@@ -161,8 +161,8 @@
 			refresh() {
 				const type = this.getItemType();
 				const quantity = this.getItemQuantity();
-				this._overlay.atlasName = type ? VS.Type.getVariable(type, 'atlasName') : '';
-				this._overlay.iconName = type ? (VS.Type.getVariable(type, 'iconState') ? VS.Type.getVariable(type, 'iconState') : VS.Type.getVariable(type, 'iconName')) + this.getParent()._denotar : '';
+				this._overlay.atlasName = type ? VYLO.Type.getVariable(type, 'atlasName') : '';
+				this._overlay.iconName = type ? (VYLO.Type.getVariable(type, 'iconState') ? VYLO.Type.getVariable(type, 'iconState') : VYLO.Type.getVariable(type, 'iconName')) + this.getParent()._denotar : '';
 				if (quantity) {
 					this._slotElement.text = '<div class="' + this.getParent()._slotClassList.join(' ') + '">' + '<sub>' + quantity + '</sub></div>';
 				} else {
@@ -244,11 +244,11 @@
 			 * desc: Generates a slot class instance for every slot element in this interface and attaches the slot element to it
 			 */
 			generateSlots(pMaxSlots) {
-				const slotWidth = VS.Type.getVariable(this._slotType, 'width');
-				const slotHeight = VS.Type.getVariable(this._slotType, 'height');
+				const slotWidth = VYLO.Type.getVariable(this._slotType, 'width');
+				const slotHeight = VYLO.Type.getVariable(this._slotType, 'height');
 				for (let i = 0; i < pMaxSlots; i++) {
 					const slotElementNumber = i + 1;
-					const slotElement = VS.Client.getInterfaceElement(this._interface, 'slot_' + slotElementNumber);
+					const slotElement = VYLO.Client.getInterfaceElement(this._interface, 'slot_' + slotElementNumber);
 					this._slots[i] = new Slot(i);
 					// The overlay that will be used to show all items in the inventory per slot
 					const overlay = this._slots[i]._overlay;
@@ -299,12 +299,12 @@
 			 * desc: Registers this type so that it can be added to this inventory
 			 */
 			registerType(pType) {
-				if (VS.Type.isType(pType)) {
+				if (VYLO.Type.isType(pType)) {
 					if (!this._registeredTypes.includes(pType)) {
 						this._registeredTypes.push(pType);
 					}
 				} else {
-					console.warn('aInventory: This is not a valid type. Registration failed');
+					console.warn('EInventory: This is not a valid type. Registration failed');
 				}
 			}
 			/**
@@ -343,7 +343,7 @@
 			 * desc: Add item to the map since it was dropped
 			 */
 			static addItemToMap(pType, pX, pY, pMap, pItemInfo, pQuantity) {
-				const item = VS.newDiob(pType);
+				const item = VYLO.newDiob(pType);
 				if (pItemInfo) item.itemInfo = pItemInfo;
 				if (pQuantity) item.quantity = pQuantity;
 				item.setPos(pX, pY, pMap);
@@ -360,7 +360,7 @@
 					pItem.onPickup();
 				}
 
-				VS.delDiob(pItem);
+				VYLO.delDiob(pItem);
 			}
 			/**
 			 * pItemID: The id of the diob you want to pick up
@@ -368,8 +368,8 @@
 			 * The packet will only be sent if the id is a valid id of a diob
 			 */
 			static authenticateItemRequest(pInventoryID, pItemID) {
-				if (typeof(VS.Client.onNetwork) === 'function') {
-					VS.Client.onNetwork('aInventory', 'authenticateItemRequest', [[pInventoryID, pItemID]]);
+				if (typeof(VYLO.Client.onNetwork) === 'function') {
+					VYLO.Client.onNetwork('EInventory', 'authenticateItemRequest', [[pInventoryID, pItemID]]);
 				}
 			}
 			/**
@@ -379,14 +379,14 @@
 				let childType = false;
 				// Allows children types of a registered type to be added
 				for (const rT of this._registeredTypes) {
-					if (VS.Type.isType(pItemType, rT)) {
+					if (VYLO.Type.isType(pItemType, rT)) {
 						childType = true;
 						break
 					}
 				}
 				// If this is not an registered type or a child of a registered type this cannot be added to the inventory
 				if (!this._registeredTypes.includes(pItemType) && !childType) {
-					console.error('aInventory: This type(' + pItemType + ') is not of a registered type with this inventory.');
+					console.error('EInventory: This type(' + pItemType + ') is not of a registered type with this inventory.');
 					return false;
 				}
 				return true;
@@ -398,10 +398,10 @@
 			isEligibleItem(pItem) {
 				if (pItem) {
 					// If this code is ran in a multiplayer envrionment it does not need to check for `obtainable` . It will be checked server side, as its a server side variable
-					if (VS.World.getCodeType() === 'local') {
-						const obtainable = pItem.obtainable ? pItem.obtainable : VS.Type.getVariable(type, 'obtainable') ? VS.Type.getVariable(type, 'obtainable') : VS.Type.getStaticVariable(type, 'obtainable');
+					if (VYLO.World.getCodeType() === 'local') {
+						const obtainable = pItem.obtainable ? pItem.obtainable : VYLO.Type.getVariable(type, 'obtainable') ? VYLO.Type.getVariable(type, 'obtainable') : VYLO.Type.getStaticVariable(type, 'obtainable');
 						if (!obtainable) {
-							console.error('aInventory: This item(' + pItem.id + ') is not obtainable.');
+							console.error('EInventory: This item(' + pItem.id + ') is not obtainable.');
 							return false;
 						}
 					}
@@ -409,20 +409,20 @@
 						return false;
 					}
 					// If this code is ran in a multiplayer envrionment it does not need to check for `quantity` . It will be checked server side, as its a server side variable
-					if (VS.World.getCodeType() === 'local') {
+					if (VYLO.World.getCodeType() === 'local') {
 						// Things that can be stacked have a quantity variable. If there is no quantity set then this is not a stackable item
 						// If the inventory is full, and you pick up a item that is stackable, it will still check if it can be added to another stack instead of returning out.
 						if (this.isMaxed() && !pItem.quantity) {
-							console.error('aInventory: %cpNo available slots', 'font-weight: bold');
+							console.error('EInventory: %cpNo available slots', 'font-weight: bold');
 							return false;
 						}
 					}
-					if (VS.Map.getDist(VS.Client.mob, pItem) > this.getMaxDistance()) {
-						console.error('aInventory: This item(' + pItem.id + ') is out of range.');
+					if (VYLO.Map.getDist(VYLO.Client.mob, pItem) > this.getMaxDistance()) {
+						console.error('EInventory: This item(' + pItem.id + ') is out of range.');
 						return false;
 					}
 				} else {
-					console.error('aInventory: No item passed!');
+					console.error('EInventory: No item passed!');
 					return false;
 				}
 				return true;
@@ -432,8 +432,8 @@
 			 * desc: If the game is ran in a multiplayer environment then the item will be autheticated by the server, this is to prevent spoofing of items
 			 */
 			obtain(pItem) {
-				if (pItem && VS.World.getDiobByID(pItem.id)) {
-					if (VS.World.getCodeType() === 'client') {
+				if (pItem && VYLO.World.getDiobByID(pItem.id)) {
+					if (VYLO.World.getCodeType() === 'client') {
 						if (this.isEligibleItem(pItem)) {
 							Inventory.authenticateItemRequest(this.getID(), pItem.id);
 						}
@@ -468,7 +468,7 @@
 				const itemInfo = pItemData[2];
 				let type;
 				if (ID) {
-					type = VS.World.getDiobByID(ID).type;
+					type = VYLO.World.getDiobByID(ID).type;
 				}
 				this.getSlot(pSlotNumber)._item.type = type;
 				if (quantity) {
@@ -489,12 +489,12 @@
 			addItem(pItem) {
 				// If this inventory is locked you cannot use it.
 				if (this.isLocked()) {
-					console.warn('aInventory: This inventory is currently locked. Unlock it to pick up this item');
+					console.warn('EInventory: This inventory is currently locked. Unlock it to pick up this item');
 					return;
 				}
 				const type = pItem.type;
 				const quantity = pItem.quantity;
-				const itemInfo = pItem.itemInfo ? pItem.itemInfo : VS.Type.getVariable(type, 'itemInfo') ? VS.Type.getVariable(type, 'itemInfo') : VS.Type.getStaticVariable(type, 'itemInfo');
+				const itemInfo = pItem.itemInfo ? pItem.itemInfo : VYLO.Type.getVariable(type, 'itemInfo') ? VYLO.Type.getVariable(type, 'itemInfo') : VYLO.Type.getStaticVariable(type, 'itemInfo');
 
 				// Search through the slots in the inventory to see if this item already exists
 				for (const slot in this._slots) {
@@ -503,7 +503,7 @@
 						// If this item has a quantity, it means it can be stacked
 						if (quantity) {
 							// Checks the instance's maxQuantity first, then the types variable, then the static variable, then if nothing is found it uses the default value
-							const maxQuantity = pItem.maxQuantity ? pItem.maxQuantity : VS.Type.getVariable(type, 'maxQuantity') ? VS.Type.getVariable(type, 'maxQuantity') : VS.Type.getStaticVariable(type, 'maxQuantity') ? VS.Type.getStaticVariable(type, 'maxQuantity') : DEFAULT_MAX_QUANTITY;
+							const maxQuantity = pItem.maxQuantity ? pItem.maxQuantity : VYLO.Type.getVariable(type, 'maxQuantity') ? VYLO.Type.getVariable(type, 'maxQuantity') : VYLO.Type.getStaticVariable(type, 'maxQuantity') ? VYLO.Type.getStaticVariable(type, 'maxQuantity') : DEFAULT_MAX_QUANTITY;
 							// If this slot is not full and it isn't a full stack of items being added
 							if (slotQuantity !== maxQuantity) {
 								if (slotQuantity + quantity > maxQuantity) {
@@ -533,7 +533,7 @@
 				}
 
 				if (this.isMaxed()) {
-					console.error('aInventory: %cpNo available slots', 'font-weight: bold');
+					console.error('EInventory: %cpNo available slots', 'font-weight: bold');
 					return;
 				}
 					
@@ -577,11 +577,11 @@
 			removeQuantity(pSlotNumber, pQuantity) {
 				// If this slot has a quantity to begin with
 				if (this.getSlot(pSlotNumber).getItemQuantity()) {
-					if (VS.World.getCodeType() === 'local') {
+					if (VYLO.World.getCodeType() === 'local') {
 						this.discardQuantity(pSlotNumber, pQuantity);
 					} else {
-						if (typeof(VS.Client.onNetwork) === 'function') {
-							VS.Client.onNetwork('aInventory', 'removeQuantity', [[this.getID(), pSlotNumber, pQuantity]]);
+						if (typeof(VYLO.Client.onNetwork) === 'function') {
+							VYLO.Client.onNetwork('EInventory', 'removeQuantity', [[this.getID(), pSlotNumber, pQuantity]]);
 						}
 					}
 				}
@@ -602,7 +602,7 @@
 			 */
 			removeItem(pSlotNumber, pQuantity) {
 				if (this.isLocked()) {
-					console.warn('aInventory: This inventory is currently locked. Unlock it to remove this item');
+					console.warn('EInventory: This inventory is currently locked. Unlock it to remove this item');
 					return;
 				}
 				if (this.getSlot(pSlotNumber)) {
@@ -613,25 +613,25 @@
 						// Clamp the amount to drop down to what you have available to drop to prevent duplicate item bugs
 						pQuantity = clamp(pQuantity, !quantity ? ZERO : ONE, quantity);
 						// This portion of the code only needs to run if the game is singleplayer. This will allow it to be added to the map.
-						if (VS.World.getCodeType() === 'local') {
+						if (VYLO.World.getCodeType() === 'local') {
 							const type = this.getSlot(pSlotNumber).getItemType();
 							const itemInfo = this.getSlot(pSlotNumber).getItemInfo();
 							const quantityToDrop = clamp(!quantity ? ZERO : pQuantity, !quantity ? ZERO : ONE, quantity);
-							const dissapearOnDrop = VS.Type.getVariable(type, 'dissapearOnDrop') ? VS.Type.getVariable(type, 'dissapearOnDrop') : VS.Type.getStaticVariable(type, 'dissapearOnDrop');
+							const dissapearOnDrop = VYLO.Type.getVariable(type, 'dissapearOnDrop') ? VYLO.Type.getVariable(type, 'dissapearOnDrop') : VYLO.Type.getStaticVariable(type, 'dissapearOnDrop');
 							if (!dissapearOnDrop) {
-								Inventory.addItemToMap(type, VS.Client.mob.xPos, VS.Client.mob.yPos, VS.Client.mob.mapName, itemInfo, quantityToDrop);
+								Inventory.addItemToMap(type, VYLO.Client.mob.xPos, VYLO.Client.mob.yPos, VYLO.Client.mob.mapName, itemInfo, quantityToDrop);
 							}
 							this.discardQuantity(pSlotNumber, pQuantity);
 						} else {
-							if (typeof(VS.Client.onNetwork) === 'function') {
-								VS.Client.onNetwork('aInventory', 'removeItem', [[this.getID(), pSlotNumber, pQuantity]]);
+							if (typeof(VYLO.Client.onNetwork) === 'function') {
+								VYLO.Client.onNetwork('EInventory', 'removeItem', [[this.getID(), pSlotNumber, pQuantity]]);
 							}
 						}
 					} else {
-						console.error('aInventory: No item in slot(' + pSlotNumber + ')');
+						console.error('EInventory: No item in slot(' + pSlotNumber + ')');
 					}	
 				} else {
-					console.error('aInventory: This is not a valid slot(' + pSlotNumber + ')');
+					console.error('EInventory: This is not a valid slot(' + pSlotNumber + ')');
 				}
 			}
 			/**
@@ -649,7 +649,7 @@
 			 */
 			relinquish(pSlotNumber, pQuantity) {
 				if (this.isLocked()) {
-					console.warn('aInventory: This inventory is currently locked. Unlock it to remove this item');
+					console.warn('EInventory: This inventory is currently locked. Unlock it to remove this item');
 					return;
 				}
 				if (this.getSlot(pSlotNumber)) {
@@ -661,7 +661,7 @@
 						if (currentQuantity > ONE) {
 							this.lock();
 							this._activeSlotNumber = pSlotNumber;
-							aInventory.input.call(this, 'Amount to drop?', function(pDropAmount) {
+							EInventory.input.call(this, 'Amount to drop?', function(pDropAmount) {
 								const value = parseInt(pDropAmount, 10);
 								quantityToDrop = clamp(Number.isInteger(value) ? value : ONE, ZERO, currentQuantity);
 								if (!quantityToDrop && currentQuantity) {
@@ -685,10 +685,10 @@
 							this.removeItem(pSlotNumber, currentQuantity);
 						}
 					} else {
-						console.error('aInventory: No item in slot(' + pSlotNumber + ')');
+						console.error('EInventory: No item in slot(' + pSlotNumber + ')');
 					}	
 				} else {
-					console.error('aInventory: This is not a valid slot(' + pSlotNumber + ')');
+					console.error('EInventory: This is not a valid slot(' + pSlotNumber + ')');
 				}
 			}
 			/**
@@ -709,8 +709,8 @@
 						pSlotInstance1.refresh();
 						pSlotInstance2.refresh();
 
-						if (typeof(VS.Client.onNetwork) === 'function') {
-							VS.Client.onNetwork('aInventory', 'moveSlot', [[this.getID(), inventory.getID(), pSlotInstance1.getSlotNumber(), pSlotInstance2.getSlotNumber()]]);
+						if (typeof(VYLO.Client.onNetwork) === 'function') {
+							VYLO.Client.onNetwork('EInventory', 'moveSlot', [[this.getID(), inventory.getID(), pSlotInstance1.getSlotNumber(), pSlotInstance2.getSlotNumber()]]);
 						}
 					} else {
 						this.restoreSlot(pSlotInstance1.getSlotNumber());
@@ -740,8 +740,8 @@
 						pSlotInstance1.refresh();
 						pSlotInstance2.refresh();
 
-						if (typeof(VS.Client.onNetwork) === 'function') {
-							VS.Client.onNetwork('aInventory', 'swapSlots', [[this.getID(), inventory.getID(), pSlotInstance1.getSlotNumber(), pSlotInstance2.getSlotNumber()]])
+						if (typeof(VYLO.Client.onNetwork) === 'function') {
+							VYLO.Client.onNetwork('EInventory', 'swapSlots', [[this.getID(), inventory.getID(), pSlotInstance1.getSlotNumber(), pSlotInstance2.getSlotNumber()]])
 						}
 					} else {
 						this.restoreSlot(pSlotInstance1.getSlotNumber());
@@ -753,7 +753,7 @@
 		/**
 		 * desc: Create a inventory from the server side
 		 */
-		aInventory.createInventoryFromServer = function(pInterface, pItemAtlasName, pSlotType, pGlobal, pMaxSlots, pMaxDistance, pSlotClassList, pRegisteredTypes, pDenotar, pID, pVariable, pDisableDefaultDrop) {
+		EInventory.createInventoryFromServer = function(pInterface, pItemAtlasName, pSlotType, pGlobal, pMaxSlots, pMaxDistance, pSlotClassList, pRegisteredTypes, pDenotar, pID, pVariable, pDisableDefaultDrop) {
 			const settings = {
 				'interface': pInterface,
 				'itemAtlasName': pItemAtlasName,
@@ -767,7 +767,7 @@
 				'disableDefaultDrop': pDisableDefaultDrop,
 				'id': pID
 			}
-			VS.Client[pVariable] = this.createInventory(settings);
+			VYLO.Client[pVariable] = this.createInventory(settings);
 
 		}
 		/**
@@ -775,12 +775,12 @@
 		 * pCallback: The callback to use for the modal when the quantity is used
 		 * desc: An input menu that is shown so a user can input a qunatity
 		 */
-		aInventory.input = function(pTitle = 'Drop how many?', pCallback) {
-			const modal = document.getElementById('aInventory_modal');
-			const modalInput = document.getElementById('aInventory_modalInput');
-			const modalCloseButton = document.getElementById('aInventory_modalClose');
-			const modalSubmitButton = document.getElementById('aInventory_submit');
-			const modalTitle = document.getElementById('aInventory_modalTitleContent');
+		EInventory.input = function(pTitle = 'Drop how many?', pCallback) {
+			const modal = document.getElementById('EInventory_modal');
+			const modalInput = document.getElementById('EInventory_modalInput');
+			const modalCloseButton = document.getElementById('EInventory_modalClose');
+			const modalSubmitButton = document.getElementById('EInventory_submit');
+			const modalTitle = document.getElementById('EInventory_modalTitleContent');
 
 			if (!modal.initialized) {
 				modal.show = function() {
@@ -835,25 +835,25 @@
 		 * pSettings.disableDefaultDrop: If this inventory will prevent the default action for dropping items. This means the user will drop things themselves.
 		 * pSettings.id: The id to reference this inventory with. This will only be passed from the server
 		 */
-		aInventory.createInventory = function(pSettings) {
+		EInventory.createInventory = function(pSettings) {
 			if (typeof(pSettings) === 'object' && pSettings.constructor === Object) {
 				if (!pSettings.interface) {
-					console.error('aInventory: The pSettings.interface string could not be found. Initialization failed.');
+					console.error('EInventory: The pSettings.interface string could not be found. Initialization failed.');
 					return;					
-				} else if (!VS.Client.getInterfaceNames().includes(pSettings.interface)) {
-					console.error('aInventory: The pSettings.interface interface could not be found. Initialization failed.');
+				} else if (!VYLO.Client.getInterfaceNames().includes(pSettings.interface)) {
+					console.error('EInventory: The pSettings.interface interface could not be found. Initialization failed.');
 					return;
 				}
 				if (!pSettings.itemAtlasName) {
-					console.error('aInventory: The pSettings.itemAtlasName string could not be found. Initialization failed.');
+					console.error('EInventory: The pSettings.itemAtlasName string could not be found. Initialization failed.');
 					return;					
 				}
 				if (typeof(pSettings.slotType) !== 'string') {
-					console.error('aInventory: The pSettings.slotType is of the wrong type. Expecting a string. Initialization failed.');
+					console.error('EInventory: The pSettings.slotType is of the wrong type. Expecting a string. Initialization failed.');
 					return;
 				}
 				if (!pSettings.slotType) {
-					console.error('aInventory: pSettings.slotType was found! This is a needed property');
+					console.error('EInventory: pSettings.slotType was found! This is a needed property');
 					return;
 				}
 
@@ -865,11 +865,11 @@
 				
 				if (!Array.isArray(pSettings.slotClassList)) {
 					pSettings.slotClassList = [];
-					console.error('aInventory: The pSettings.slotClassList is not of the Array type.');
+					console.error('EInventory: The pSettings.slotClassList is not of the Array type.');
 				}
 				if (!Array.isArray(pSettings.registeredTypes)) {
 					pSettings.registeredTypes = [];
-					console.warn('aInventory: This inventory has no registered types to accept. It will not be able to store anything until a type is registered!');
+					console.warn('EInventory: This inventory has no registered types to accept. It will not be able to store anything until a type is registered!');
 				}
 				const inventory = new Inventory(pSettings);
 				// Store the slot type so we can reference it in mouse events to see if a slot was used in a mouse event
@@ -879,10 +879,10 @@
 					this.storedInventories[pSettings.id] = inventory;
 				}
 				
-				const slotWidth = VS.Type.getVariable(pSettings.slotType, 'width');
-				const slotHeight = VS.Type.getVariable(pSettings.slotType, 'height');
+				const slotWidth = VYLO.Type.getVariable(pSettings.slotType, 'width');
+				const slotHeight = VYLO.Type.getVariable(pSettings.slotType, 'height');
 
-				this.slotHighlight = VS.newDiob('Overlay');
+				this.slotHighlight = VYLO.newDiob('Overlay');
 				this.slotHighlight.width = slotWidth;
 				this.slotHighlight.height = slotHeight;
 				this.slotHighlight.preventAutoScale = true;
@@ -894,11 +894,11 @@
 				this.slotHighlight.color = { 'tint': 0xFFFFFF };
 				return inventory;
 			} else {
-				console.warn('aInventory: Invalid type passed for pSettings');
+				console.warn('EInventory: Invalid type passed for pSettings');
 			}
 		}
 
-		aInventory.handleOnMouseDown = function(pDiob, pX, pY, pButton) {
+		EInventory.handleOnMouseDown = function(pDiob, pX, pY, pButton) {
 			if (pButton === 1) {
 				const inventory = this.storedSlotTypes[pDiob.type];
 				if (pDiob && inventory) {
@@ -908,12 +908,12 @@
 							this.heldSlotInstance = slotInstance;
 							this.grabbing  = true;
 							if (!this.mouseCursor) {
-								this.mouseCursor = VS.newDiob();
+								this.mouseCursor = VYLO.newDiob();
 							}
-							this.mouseCursor.atlasName = VS.Type.getVariable(slotInstance.getItemType(), 'atlasName');
-							this.mouseCursor.iconName = VS.Type.getVariable(slotInstance.getItemType(), 'iconName');
-							this.mouseCursor.iconState = VS.Type.getVariable(slotInstance.getItemType(), 'iconState');
-							VS.Client.setMouseCursor(this.mouseCursor);
+							this.mouseCursor.atlasName = VYLO.Type.getVariable(slotInstance.getItemType(), 'atlasName');
+							this.mouseCursor.iconName = VYLO.Type.getVariable(slotInstance.getItemType(), 'iconName');
+							this.mouseCursor.iconState = VYLO.Type.getVariable(slotInstance.getItemType(), 'iconState');
+							VYLO.Client.setMouseCursor(this.mouseCursor);
 							slotInstance.hideInfo();
 						}
 					}
@@ -921,7 +921,7 @@
 			}			
 		}
 
-		aInventory.handleOnMouseUp = function(pDiob, pX, pY, pButton) {
+		EInventory.handleOnMouseUp = function(pDiob, pX, pY, pButton) {
 			if (pButton === 1) {
 				if (this.heldSlotInstance) {
 					const inventory = this.heldSlotInstance.getParent();
@@ -979,24 +979,24 @@
 					this.heldSlotInstance = null;
 					if (newSlotInstance) newSlotInstance.refresh();
 					this.grabbing = false;
-					VS.Client.setMouseCursor('');
+					VYLO.Client.setMouseCursor('');
 				}
 			}
 		}
 
-		aInventory.getInventoryByID = function(pInventoryID) {
+		EInventory.getInventoryByID = function(pInventoryID) {
 			return this.storedInventories[pInventoryID];
 		}
 
-		aInventory.isHoldingItem = function() {
+		EInventory.isHoldingItem = function() {
 			return this.grabbing ? true : false;
 		}
 
-		aInventory.toggleDebug = function() {
+		EInventory.toggleDebug = function() {
 			this.debugging = !this.debugging;
 		}
 
-		AListener.addEventListener(VS.Client, 'onMouseDown', aInventory.handleOnMouseDown.bind(aInventory));
-		AListener.addEventListener(VS.Client, 'onMouseUp', aInventory.handleOnMouseUp.bind(aInventory));
+		EListener.on(VYLO.Client, 'onMouseDown', EInventory.handleOnMouseDown.bind(EInventory));
+		EListener.on(VYLO.Client, 'onMouseUp', EInventory.handleOnMouseUp.bind(EInventory));
 	}
 })();
